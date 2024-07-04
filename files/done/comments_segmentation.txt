@@ -1,0 +1,15 @@
+Comments and Notes on Squats while segmenting
+Segmentation done!
+
+- 10_fastnb3:		Strange Forceplate Data
+- Session 2 of ID 12: 	Strange Baseline reading --> Offset in FP Data should be respected
+- 14_bounce70b1:	Strange curve in FP Data
+- 22_bounce80nb3:	invalid --> delete
+- 24_bounce70b3:	Invalid --> delete
+- 24_fastb3:		Invalid --> delete
+- 38_fastnb1:		Invalid --> delete
+
+
+
+
+
