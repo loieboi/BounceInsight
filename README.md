@@ -1,27 +1,106 @@
-# Velocity-Based Training Data Segmentation
 
-## Overview
+# BounceInsight
 
-This project focuses on the segmentation of velocity-based training data from various sources, including force plates, Apple Watches, and linear position transducers. The primary goal is to accurately identify exercise segments and key events (start, turn, end) in training cycles to evaluate performance metrics and force plate data.
+BounceInsight is a Python-based tool designed for the analysis and segmentation of force plate data related to bounce activities. The tool provides functionalities to identify, manually segment, and analyze bounce data files, making it a comprehensive solution for researchers and practitioners working with biomechanical data.
 
-## Foundation
+## Table of Contents
+- [Installation](#installation)
+- [Usage](#usage)
+- [Modules](#modules)
+- [TODO's](#todo-list)
+- [Acknowledgements](#acknowledgements)
 
-The foundation for this project was laid by my supervisor, [acbasil](https://github.com/acbasil). They provided the groundwork for segmenting velocity and acceleration-based data. Building on this foundation, my goal is to implement and extend the segmentation to work with force plate data, enhancing the analysis and evaluation of training performance using force-related metrics.
+## Installation
 
-## Features
-
-- **Multi-source Data Segmentation**: Identify exercise segments from diverse sources such as force plates, Apple Watches, and linear position transducers.
-- **Force Plate Data Analysis**: Evaluate and segment data from force plates to assess force-related metrics.
-- **Event Detection**: Detect key events (start, turn, end) in the exercise cycles.
-- **Data Visualization**: Plot velocity and force data with overlayed exercise segments.
-- **Performance Evaluation**: Evaluate training performance using segmented data.
-
-## Required Packages
-To install the dependencies listed in `packages.txt`, use the following command:
+To install the required packages, use the following command:
 
 ```bash
 pip install -r packages.txt
 ```
+
+## Usage
+
+The main script for running the BounceInsight tool is `run.py`. This script provides a GUI interface for identifying files, manually segmenting bounce data, and analyzing the segmented data.
+
+```bash
+python run.py
+```
+
+### Key Functionalities
+
+- **Identify Files**: Identifies and organizes bounce data files based on predefined patterns.
+- **Manual Segment**: Allows manual segmentation of bounce data files to isolate individual bounces.
+- **Analyze Bounce**: Analyzes the segmented bounce data and identifies points of interest.
+
+## Modules
+
+### BounceInsight Class (`__init__.py`)
+The `BounceInsight` class is the core of the tool, integrating various functionalities including reading data, manual segmentation, and bounce analysis.
+
+#### Methods:
+- `manual_segment()`: Manually segments bounce data files.
+- `analyse_bounce(id=None, plot=False)`: Analyzes the segmented bounce data.
+  - id: specifies which bounce files to analyze of which participant. (default: None, all participants)
+  - plot: specifies whether to plot the data. (default: False)
+- `identify_files()`: Identifies and organizes bounce data files.
+
+### File Identifier (`file_identifier.py`)
+The `FileIdentifier` class is used to organize bounce data files into specific folders based on predefined patterns.
+- The source folder should contain Participant folders with their respective ID at the beginning, each containing raw bounce data files in the Vicon Force Plate Format.
+  ```bash
+  ├── source_folder
+      └── XX_participant_folder
+          └── raw_file.csv
+  ```
+- The destination folder will contain all files collected into their respective categories.
+  ```bash
+  ├── identifier_folder 1
+      ├── 01_bounce_file_1.csv
+      └── 01_bounce_file_2.csv
+  └── identifier_folder 2
+      ├── 02_bounce_file_1.csv
+      └── 02_bounce_file_2.csv
+  ```
+
+
+### Reader (`reader.py`)
+Read Vicon Force Plate data files and extract relevant information.
+
+#### Classes:
+- `Reader`.
+- `FPReader`
+- `FP3DReader`
+- `Raw_FP_Reader`
+
+### Manual Bounce Segmenter (`manual_bounce_segmenter.py`)
+The `ManualBounceSegmenter` class provides functionalities for manually segmenting bounce data files.
+- The manual segmentation process involves manually identifying the start and end points of each bounce in the data file with the help of the SpanSelector.
+- Every processed file will be saved in the `files/edited` folder and moved from the `files/raw` folder to the `files/done` folder.
+  - This is used for a simple way to keep track of which files have been processed.
+
+### Bounce Analyser (`bounce_analyser.py`)
+The `BounceAnalyser` class provides functionalities for analyzing segmented bounce data.
+
+- Used to analyze the segmented bounce data and identify points of interest.
+- The points of interest include:
+  - Baseline Crossings
+  - Positive Peaks
+  - Negative Peaks
+  - t<sub>ecc</sub>: Eccentric Phase Time  <sup>[w.i.p.]</sup>
+  - t<sub>con</sub>: Concentric Phase Time <sup>[w.i.p.]</sup>
+  - Inverse Point Force <sup>[w.i.p.]</sup>
+- Other Analysis:
+  - Impact of weight on peak power <sup>[w.i.p.]</sup>
+  - Impact of Eccentric Phase Time on peak power <sup>[w.i.p.]</sup>
+
+## TODO List
+- [ ] Implement detection of Eccentric Phase Time, t<sub>ecc</sub>
+- [ ] Implement detection of Concentric Phase Time, t<sub>con</sub>
+- [ ] Implement detection of "Inverse Point" Force
+- [ ] Validate t<sub>ecc</sub> and t<sub>con</sub> with the Gymaware data
+- [ ] Implement analysis of the impact of weight on peak power
+- [ ] Implement analysis of the impact of Eccentric Phase Time on peak power
+
 
 ## Acknowledgements
 
