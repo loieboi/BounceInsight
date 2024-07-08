@@ -166,6 +166,36 @@ class BounceAnalyser:
 
         self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'], p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'], verbose=verbose)
 
+    def find_highest_peaks(self, series, start, end, baseline):
+        # Extract the portion of the series between the start and end
+        portion = series[start:end]
+        # Find the peaks in this portion
+        pos_peaks, _ = sig.find_peaks(portion, prominence=0.5)
+        neg_peaks, _ = sig.find_peaks(-portion, prominence=0.5)
+
+        highest_pos_peak = None
+        highest_neg_peak = None
+
+        if len(pos_peaks) > 0:
+            # Filter out peaks that are below the baseline
+            pos_peaks = pos_peaks[portion.iloc[pos_peaks] > baseline]
+            if len(pos_peaks) > 0:
+                # Find the highest positive peak
+                highest_pos_peak = pos_peaks[np.argmax(portion.iloc[pos_peaks])]
+                # Adjust the index of the highest peak to match the original series
+                highest_pos_peak += start
+
+        if len(neg_peaks) > 0:
+            # Filter out peaks that are above the baseline
+            neg_peaks = neg_peaks[portion.iloc[neg_peaks] < baseline]
+            if len(neg_peaks) > 0:
+                # Find the highest negative peak
+                highest_neg_peak = neg_peaks[np.argmax(-portion.iloc[neg_peaks])]
+                # Adjust the index of the highest peak to match the original series
+                highest_neg_peak += start
+
+        return highest_pos_peak, highest_neg_peak
+
     def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, verbose=False):
         # Load the points_of_interest.csv file into a DataFrame
         if os.path.exists('analyser/points_of_interest.csv'):
@@ -215,36 +245,6 @@ class BounceAnalyser:
         if verbose:
             print("Updated DataFrame:")
             print(df)
-
-    def find_highest_peaks(self, series, start, end, baseline):
-        # Extract the portion of the series between the start and end
-        portion = series[start:end]
-        # Find the peaks in this portion
-        pos_peaks, _ = sig.find_peaks(portion, prominence=0.5)
-        neg_peaks, _ = sig.find_peaks(-portion, prominence=0.5)
-
-        highest_pos_peak = None
-        highest_neg_peak = None
-
-        if len(pos_peaks) > 0:
-            # Filter out peaks that are below the baseline
-            pos_peaks = pos_peaks[portion.iloc[pos_peaks] > baseline]
-            if len(pos_peaks) > 0:
-                # Find the highest positive peak
-                highest_pos_peak = pos_peaks[np.argmax(portion.iloc[pos_peaks])]
-                # Adjust the index of the highest peak to match the original series
-                highest_pos_peak += start
-
-        if len(neg_peaks) > 0:
-            # Filter out peaks that are above the baseline
-            neg_peaks = neg_peaks[portion.iloc[neg_peaks] < baseline]
-            if len(neg_peaks) > 0:
-                # Find the highest negative peak
-                highest_neg_peak = neg_peaks[np.argmax(-portion.iloc[neg_peaks])]
-                # Adjust the index of the highest peak to match the original series
-                highest_neg_peak += start
-
-        return highest_pos_peak, highest_neg_peak
 
     def calculate_t_ecc(self):
         pass
