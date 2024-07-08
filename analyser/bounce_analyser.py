@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
-from scipy.signal import find_peaks
-from scipy.integrate import simps
 from scipy import signal as sig
 from tqdm import tqdm
 
@@ -139,8 +137,6 @@ class BounceAnalyser:
         # Find the baseline crossings
         baseline_crossings = np.where(np.diff(np.sign(combined - baseline)))[0]
 
-        # FIXME: It takes every baseline crossing, so its hyper sensitive, look at bounce80nb2_19.csv the problem is that the baseline is not stable, so it crosses the baseline multiple times
-
         highest_pos_peaks = []
         highest_neg_peaks = []
 
@@ -148,12 +144,10 @@ class BounceAnalyser:
         for i in range(len(baseline_crossings) - 1):
             start = baseline_crossings[i]
             end = baseline_crossings[i + 1]
-            # Find the highest peaks between these two baseline crossings
-            highest_pos_peak, highest_neg_peak = self.find_highest_peaks(combined, start, end, baseline)
-            if highest_pos_peak is not None:
-                highest_pos_peaks.append(highest_pos_peak)
-            if highest_neg_peak is not None:
-                highest_neg_peaks.append(highest_neg_peak)
+            # Find the two highest peaks between these two baseline crossings
+            pos_peaks, neg_peaks = self.find_highest_peaks(combined, start, end, baseline)
+            highest_pos_peaks.extend(pos_peaks)
+            highest_neg_peaks.extend(neg_peaks)
 
         # Append the data to the dictionary
         p_o_i[bounce_file_id] = {
@@ -164,37 +158,44 @@ class BounceAnalyser:
             'baseline_crossings': baseline_crossings
         }
 
-        self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'], p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'], verbose=verbose)
+        self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
+                            p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'],
+                            verbose=verbose)
 
-    def find_highest_peaks(self, series, start, end, baseline):
+    def find_highest_peaks(self, series, start, end, baseline, min_prominence=25):
         # Extract the portion of the series between the start and end
         portion = series[start:end]
-        # Find the peaks in this portion
-        pos_peaks, _ = sig.find_peaks(portion, prominence=0.5)
-        neg_peaks, _ = sig.find_peaks(-portion, prominence=0.5)
 
-        highest_pos_peak = None
-        highest_neg_peak = None
+        # Find all positive and negative peaks in this portion
+        pos_peaks, pos_properties = sig.find_peaks(portion, prominence=min_prominence)
+        neg_peaks, neg_properties = sig.find_peaks(-portion, prominence=min_prominence)
 
-        if len(pos_peaks) > 0:
-            # Filter out peaks that are below the baseline
-            pos_peaks = pos_peaks[portion.iloc[pos_peaks] > baseline]
-            if len(pos_peaks) > 0:
-                # Find the highest positive peak
-                highest_pos_peak = pos_peaks[np.argmax(portion.iloc[pos_peaks])]
-                # Adjust the index of the highest peak to match the original series
-                highest_pos_peak += start
+        # Initialize variables to store the highest peaks
+        highest_pos_peaks = []
+        highest_neg_peaks = []
 
-        if len(neg_peaks) > 0:
-            # Filter out peaks that are above the baseline
-            neg_peaks = neg_peaks[portion.iloc[neg_peaks] < baseline]
-            if len(neg_peaks) > 0:
-                # Find the highest negative peak
-                highest_neg_peak = neg_peaks[np.argmax(-portion.iloc[neg_peaks])]
-                # Adjust the index of the highest peak to match the original series
-                highest_neg_peak += start
+        # Ensure that we only consider peaks above/below the baseline
+        pos_peaks = [p for p in pos_peaks if portion.iloc[p] > baseline]
+        neg_peaks = [n for n in neg_peaks if portion.iloc[n] < baseline]
 
-        return highest_pos_peak, highest_neg_peak
+        # Sort peaks based on their prominence
+        pos_peaks_sorted = sorted(pos_peaks, key=lambda x: pos_properties["prominences"][np.where(pos_peaks == x)][0],
+                                  reverse=True)
+        neg_peaks_sorted = sorted(neg_peaks, key=lambda x: neg_properties["prominences"][np.where(neg_peaks == x)][0],
+                                  reverse=True)
+
+        # Take the two highest peaks if they exist
+        if len(pos_peaks_sorted) > 0:
+            highest_pos_peaks.append(pos_peaks_sorted[0] + start)
+        if len(pos_peaks_sorted) > 1:
+            highest_pos_peaks.append(pos_peaks_sorted[1] + start)
+
+        if len(neg_peaks_sorted) > 0:
+            highest_neg_peaks.append(neg_peaks_sorted[0] + start)
+        if len(neg_peaks_sorted) > 1:
+            highest_neg_peaks.append(neg_peaks_sorted[1] + start)
+
+        return highest_pos_peaks, highest_neg_peaks
 
     def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, verbose=False):
         # Load the points_of_interest.csv file into a DataFrame
@@ -246,7 +247,13 @@ class BounceAnalyser:
             print("Updated DataFrame:")
             print(df)
 
+    def find_turning_point(self):
+        pass
+
     def calculate_t_ecc(self):
+        pass
+
+    def calculate_t_con(self):
         pass
 
     def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, plot=False, verbose=False):
@@ -276,43 +283,21 @@ class BounceAnalyser:
             ax.plot(poi['baseline_crossings'], combined[poi['baseline_crossings']], '+', label='Baseline Crossings')
 
             # Ensure baseline is properly defined
-            baseline = threshold if np.isscalar(threshold) else np.full_like(combined, threshold)
+            if np.isscalar(threshold):
+                baseline = np.full_like(combined, threshold)
+            else:
+                baseline = threshold
 
-            # Ensure baseline is of the correct length if it is an array
-            if not np.isscalar(baseline):
-                baseline = baseline[:len(combined)]
-
-            for peak in poi['pos_peaks']:
-                # Find the next baseline crossing after the peak
-                next_crossing_indices = np.where(poi['baseline_crossings'] > peak)[0]
-                if next_crossing_indices.size > 0:
-                    next_crossing_index = poi['baseline_crossings'][next_crossing_indices[0]]
-                    x_values = np.arange(peak, next_crossing_index)
-                    ax.fill_between(x_values, baseline, combined[x_values], color='green', alpha=0.3)
-
-            for peak in poi['neg_peaks']:
-                # Find the next baseline crossing after the peak
-                next_crossing_indices = np.where(poi['baseline_crossings'] > peak)[0]
-                if next_crossing_indices.size > 0:
-                    next_crossing_index = poi['baseline_crossings'][next_crossing_indices[0]]
-                    x_values = np.arange(peak, next_crossing_index)
-                    ax.fill_between(x_values, baseline, combined[x_values], color='red', alpha=0.3)
-
-            for peak in poi['pos_peaks']:
-                # Find the next baseline crossing before the peak
-                previous_crossing_indices = np.where(poi['baseline_crossings'] < peak)[0]
-                if previous_crossing_indices.size > 0:
-                    previous_crossing_index = poi['baseline_crossings'][previous_crossing_indices[-1]]
-                    x_values = np.arange(previous_crossing_index, peak)
-                    ax.fill_between(x_values, baseline, combined[x_values], color='green', alpha=0.3)
-
-            for peak in poi['neg_peaks']:
-                # Find the next baseline crossing before the peak
-                previous_crossing_indices = np.where(poi['baseline_crossings'] < peak)[0]
-                if previous_crossing_indices.size > 0:
-                    previous_crossing_index = poi['baseline_crossings'][previous_crossing_indices[-1]]
-                    x_values = np.arange(previous_crossing_index, peak)
-                    ax.fill_between(x_values, baseline, combined[x_values], color='red', alpha=0.3)
+            # Plot filled areas without overlap
+            for i in range(len(poi['baseline_crossings']) - 1):
+                start = poi['baseline_crossings'][i]
+                end = poi['baseline_crossings'][i + 1]
+                x_values = np.arange(start, end + 1)
+                if any(peak in poi['pos_peaks'] for peak in x_values):
+                    ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='green',
+                                    alpha=0.3)
+                if any(peak in poi['neg_peaks'] for peak in x_values):
+                    ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='red', alpha=0.3)
 
             ax.set_title(f'Bounce Detailed View: {bounce_file_id}')
             ax.set_xlabel('Frames')
