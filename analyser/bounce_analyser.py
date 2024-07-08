@@ -139,15 +139,21 @@ class BounceAnalyser:
 
         highest_pos_peaks = []
         highest_neg_peaks = []
+        turning_pos_peaks = []
 
         # Iterate over each pair of baseline crossings
         for i in range(len(baseline_crossings) - 1):
             start = baseline_crossings[i]
             end = baseline_crossings[i + 1]
             # Find the two highest peaks between these two baseline crossings
-            pos_peaks, neg_peaks = self.find_highest_peaks(combined, start, end, baseline)
+            pos_peaks, neg_peaks, turning_peaks = self.find_highest_peaks(combined, start, end, baseline)
             highest_pos_peaks.extend(pos_peaks)
             highest_neg_peaks.extend(neg_peaks)
+            turning_pos_peaks.extend(turning_peaks)
+
+        # Find turning points
+        turning_point = self.find_turning_point(turning_pos_peaks)
+        turning_points = [turning_point] if turning_point is not None else []
 
         # Append the data to the dictionary
         p_o_i[bounce_file_id] = {
@@ -155,20 +161,21 @@ class BounceAnalyser:
             'end': len(combined),
             'pos_peaks': highest_pos_peaks,
             'neg_peaks': highest_neg_peaks,
-            'baseline_crossings': baseline_crossings
+            'baseline_crossings': baseline_crossings,
+            'turning_points': turning_points
         }
 
         self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
-                            p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'],
+                            p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'], p_o_i[bounce_file_id]['turning_points'],
                             verbose=verbose)
 
-    def find_highest_peaks(self, series, start, end, baseline, min_prominence=25):
+    def find_highest_peaks(self, series, start, end, baseline, peak_prominence=25, turning_point_prominence=100):
         # Extract the portion of the series between the start and end
         portion = series[start:end]
 
         # Find all positive and negative peaks in this portion
-        pos_peaks, pos_properties = sig.find_peaks(portion, prominence=min_prominence)
-        neg_peaks, neg_properties = sig.find_peaks(-portion, prominence=min_prominence)
+        pos_peaks, pos_properties = sig.find_peaks(portion, prominence=peak_prominence)
+        neg_peaks, neg_properties = sig.find_peaks(-portion, prominence=peak_prominence)
 
         # Initialize variables to store the highest peaks
         highest_pos_peaks = []
@@ -195,36 +202,49 @@ class BounceAnalyser:
         if len(neg_peaks_sorted) > 1:
             highest_neg_peaks.append(neg_peaks_sorted[1] + start)
 
-        return highest_pos_peaks, highest_neg_peaks
+        # Filter peaks for turning points based on a higher prominence threshold
+        turning_pos_peaks = [p + start for p in pos_peaks_sorted if
+                             pos_properties["prominences"][np.where(pos_peaks == p)][0] >= turning_point_prominence]
 
-    def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, verbose=False):
+        return highest_pos_peaks, highest_neg_peaks, turning_pos_peaks
+
+    def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, turning_points,
+                       verbose=False):
         # Load the points_of_interest.csv file into a DataFrame
         if os.path.exists('analyser/points_of_interest.csv'):
             df = pd.read_csv('analyser/points_of_interest.csv', dtype={'participant_id': str})
         else:
             df = pd.DataFrame(
-                columns=['file_name', 'participant_id', 'start', 'end', 'pos_peaks', 'neg_peaks', 'baseline_crossings'])
+                columns=['file_name', 'participant_id', 'start', 'end', 'pos_peaks', 'neg_peaks', 'baseline_crossings',
+                         'turning_point'])
 
         # Convert 'file_name' and 'participant_id' columns to string
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
 
-        # Ensure the columns for pos_peaks, neg_peaks, and baseline_crossings are of type string
+        # Ensure the columns for pos_peaks, neg_peaks, baseline_crossings, and turning_point are of type string
         if 'pos_peaks' in df.columns:
             df['pos_peaks'] = df['pos_peaks'].astype(str)
         if 'neg_peaks' in df.columns:
             df['neg_peaks'] = df['neg_peaks'].astype(str)
         if 'baseline_crossings' in df.columns:
             df['baseline_crossings'] = df['baseline_crossings'].astype(str)
+        if 'turning_point' in df.columns:
+            df['turning_point'] = df['turning_point'].astype(str)
 
         # Check if a row with the same file_name and participant_id already exists
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
         if df[mask].empty:
             # If such a row does not exist, append a new row with the new data
-            new_row = pd.DataFrame(
-                [{'file_name': file_name, 'participant_id': participant_id, 'pos_peaks': str(pos_peaks),
-                  'neg_peaks': str(neg_peaks), 'baseline_crossings': str(baseline_crossings)}])
+            new_row = pd.DataFrame([{
+                'file_name': file_name,
+                'participant_id': participant_id,
+                'pos_peaks': str(pos_peaks),
+                'neg_peaks': str(neg_peaks),
+                'baseline_crossings': str(baseline_crossings),
+                'turning_point': str(turning_points[0]) if turning_points else ''
+            }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
             # If such a row exists, get the start frame value
@@ -234,11 +254,13 @@ class BounceAnalyser:
             pos_peaks = [peak + start_frame for peak in pos_peaks]
             neg_peaks = [peak + start_frame for peak in neg_peaks]
             baseline_crossings = [crossing + start_frame for crossing in baseline_crossings]
+            turning_point = turning_points[0] + start_frame if turning_points else ''
 
-            # Update the pos_peaks, neg_peaks, and baseline_crossings columns for that row with the new data
+            # Update the pos_peaks, neg_peaks, baseline_crossings, and turning_point columns for that row with the new data
             df.loc[mask, 'pos_peaks'] = str(pos_peaks)
             df.loc[mask, 'neg_peaks'] = str(neg_peaks)
             df.loc[mask, 'baseline_crossings'] = str(baseline_crossings)
+            df.loc[mask, 'turning_point'] = str(turning_point)
 
         # Write the DataFrame back to the points_of_interest.csv file
         df.to_csv('analyser/points_of_interest.csv', index=False)
@@ -247,8 +269,19 @@ class BounceAnalyser:
             print("Updated DataFrame:")
             print(df)
 
-    def find_turning_point(self):
-        pass
+    def find_turning_point(self, turning_pos_peaks):
+        # Ensure there are enough significant peaks to select the 2nd last one
+        if len(turning_pos_peaks) >= 2:
+            # Sort peaks by their positions
+            turning_pos_peaks = sorted(turning_pos_peaks)
+            turning_point = turning_pos_peaks[-2]
+            return turning_point
+        elif len(turning_pos_peaks) == 1:
+            turning_point = turning_pos_peaks[0]
+            return turning_point
+        else:
+            print("No turning point detected.")
+            return None
 
     def calculate_t_ecc(self):
         pass
@@ -281,6 +314,11 @@ class BounceAnalyser:
 
             # Plot the baseline crossings
             ax.plot(poi['baseline_crossings'], combined[poi['baseline_crossings']], '+', label='Baseline Crossings')
+
+            # Plot the turning points with blue circles
+            for tp in poi['turning_points']:
+                ax.plot(tp, combined[tp], 'bo')  # 'bo' specifies blue circles
+                ax.text(tp, combined[tp], f'x={tp}, y={round(combined[tp], 1)}', fontsize=9, verticalalignment='bottom')
 
             # Ensure baseline is properly defined
             if np.isscalar(threshold):
