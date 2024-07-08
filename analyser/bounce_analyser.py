@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+from scipy.signal import find_peaks
+from scipy.integrate import simps
 from scipy import signal as sig
 from tqdm import tqdm
 
@@ -32,7 +34,7 @@ class BounceAnalyser:
         bounce_load_table = os.path.abspath(os.path.join(current_dir, '.', 'files/participant_metadata_reference.xlsx'))
         bounce_load_table = pd.read_excel(bounce_load_table)
 
-        progress_bar = tqdm(edited_bounce_files, desc="Processing files")
+        progress_bar = tqdm(edited_bounce_files, desc="Processing files", colour='red')
 
         # --- Initialize DataFrames ---
         for bounce_file_id in progress_bar:
@@ -132,14 +134,12 @@ class BounceAnalyser:
             raise ValueError('File name not recognised')
 
     def search_poi(self, bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name, verbose=False):
-        # print(f'Processing file: {bounce_file_id}')
         combined = bounce_files[bounce_file_id]['combined_force'].reset_index(drop=True)
 
         # Find the baseline crossings
         baseline_crossings = np.where(np.diff(np.sign(combined - baseline)))[0]
 
-        # FIXME: It takes every baseline crossing, so its hyper sensitive, look at bounce80nb2_19.csv
-        # the problem is that the baseline is not stable, so it crosses the baseline multiple times
+        # FIXME: It takes every baseline crossing, so its hyper sensitive, look at bounce80nb2_19.csv the problem is that the baseline is not stable, so it crosses the baseline multiple times
 
         highest_pos_peaks = []
         highest_neg_peaks = []
@@ -245,6 +245,9 @@ class BounceAnalyser:
                 highest_neg_peak += start
 
         return highest_pos_peak, highest_neg_peak
+
+    def calculate_t_ecc(self):
+        pass
 
     def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, plot=False, verbose=False):
         if plot:
