@@ -284,9 +284,13 @@ class BounceAnalyser:
             return None
 
     def calculate_t_ecc(self):
+
         pass
 
     def calculate_t_con(self):
+        pass
+
+    def update_validation_csv(self):
         pass
 
     def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, plot=False, verbose=False):
