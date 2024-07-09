@@ -47,7 +47,26 @@ class BounceAnalyser:
             baseline = (self.metadata['bodyweight'] + self.metadata['load']) * 9.81
             self.search_poi(bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name, verbose=verbose)
 
-            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, plot=plot,verbose=verbose)
+            if p_o_i[bounce_file_id]['turning_points']:
+                t_ecc = self.calculate_t_ecc(p_o_i, bounce_file_id)
+                t_con = self.calculate_t_con(p_o_i, bounce_file_id)
+                t_total = self.calculate_t_total(p_o_i, bounce_file_id)
+                turning_force = self.calculate_turning_force(p_o_i, bounce_file_id,
+                                                             bounce_files[bounce_file_id]['combined_force'])
+                if verbose:
+                    print(
+                        f"File: {bounce_file_id}, t_ecc: {t_ecc:.3f} seconds, t_con: {t_con:.3f} seconds, t_total: {t_total:.3f} seconds")
+                    print(f'Turning force: {turning_force:.2f} N')
+            else:
+                t_ecc = None
+                t_con = None
+                t_total = None
+                turning_force = None
+                print(f"No turning point detected for file {bounce_file_id}. Skipping...")
+
+            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, plot=plot,verbose=verbose)
+
+            self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=verbose)
 
             file_name = file_name.split('_', 1)[-1]
             if file_name.startswith('bounce70b'):
@@ -280,20 +299,91 @@ class BounceAnalyser:
             turning_point = turning_pos_peaks[0]
             return turning_point
         else:
-            print("No turning point detected.")
             return None
 
-    def calculate_t_ecc(self):
+    def calculate_t_ecc(self, p_o_i, bounce_file_id, frame_rate=1000):
+        poi = p_o_i[bounce_file_id]
+        first_baseline_crossing = poi['baseline_crossings'][0]
+        turning_point = poi['turning_points'][0] if poi['turning_points'] else None
 
-        pass
+        t_ecc_frames = turning_point - first_baseline_crossing
+        t_ecc = t_ecc_frames / frame_rate
+        return t_ecc
 
-    def calculate_t_con(self):
-        pass
+    def calculate_t_con(self, p_o_i, bounce_file_id, frame_rate=1000):
+        poi = p_o_i[bounce_file_id]
+        turning_point = poi['turning_points'][0] if poi['turning_points'] else None
+        last_baseline_crossing = poi['baseline_crossings'][-1]
 
-    def update_validation_csv(self):
-        pass
+        t_con_frames = last_baseline_crossing - turning_point
+        t_con = t_con_frames / frame_rate
+        return t_con
 
-    def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, plot=False, verbose=False):
+    def calculate_t_total(self, p_o_i, bounce_file_id, frame_rate=1000):
+        poi = p_o_i[bounce_file_id]
+        first_baseline_crossing = poi['baseline_crossings'][0]
+        last_baseline_crossing = poi['baseline_crossings'][-1]
+
+        t_total_frames = last_baseline_crossing - first_baseline_crossing
+        t_total = t_total_frames / frame_rate
+        return t_total
+
+    def calculate_turning_force(self, p_o_i, bounce_file_id, combined_force):
+        poi = p_o_i[bounce_file_id]
+        turning_point = poi['turning_points'][0] if poi['turning_points'] else None
+        turning_force = combined_force.iloc[turning_point]
+        return turning_force
+
+    def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=False):
+        # Load the validation.csv file into a DataFrame
+        if os.path.exists('analyser/validation.csv'):
+            df = pd.read_csv('analyser/validation.csv', dtype={'participant_id': str})
+        else:
+            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force'])
+
+        # Convert 'file_name' and 'participant_id' columns to string
+        df['file_name'] = df['file_name'].astype(str)
+        df['participant_id'] = df['participant_id'].astype(str)
+
+        # Ensure the columns are of type string
+        if 't_ecc' in df.columns:
+            df['t_ecc'] = df['t_ecc'].astype(str)
+        if 't_con' in df.columns:
+            df['t_con'] = df['t_con'].astype(str)
+        if 't_total' in df.columns:
+            df['t_total'] = df['t_total'].astype(str)
+        if 'turning_force' in df.columns:
+            df['turning_force'] = df['turning_force'].astype(str)
+
+        # Check if a row with the same file_name and participant_id already exists
+        mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
+
+        if df[mask].empty:
+            # If such a row does not exist, append a new row with the new data
+            new_row = pd.DataFrame([{
+                'file_name': file_name,
+                'participant_id': participant_id,
+                't_ecc': str(t_ecc),
+                't_con': str(t_con),
+                't_total': str(t_total),
+                'turning_force': str(turning_force)
+            }])
+            df = pd.concat([df, new_row], ignore_index=True)
+        else:
+            # Update the t_ecc, t_con, t_total, and turning_force columns for that row with the new data
+            df.loc[mask, 't_ecc'] = str(t_ecc)
+            df.loc[mask, 't_con'] = str(t_con)
+            df.loc[mask, 't_total'] = str(t_total)
+            df.loc[mask, 'turning_force'] = str(turning_force)
+
+        # Write the DataFrame back to the validation.csv file
+        df.to_csv('analyser/validation.csv', index=False)
+
+        if verbose:
+            print("Updated DataFrame:")
+            print(df)
+
+    def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, t_ecc, t_con, t_total, plot=False, verbose=False):
         if plot:
             combined = bounce_files[bounce_file_id]['combined_force'].reset_index(drop=True)
             fig, ax = plt.subplots(figsize=(20, 10))
@@ -340,6 +430,31 @@ class BounceAnalyser:
                                     alpha=0.3)
                 if any(peak in poi['neg_peaks'] for peak in x_values):
                     ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='red', alpha=0.3)
+
+            # Plot (if available) t_ecc and t_con
+            try:
+                first_baseline_crossing = poi['baseline_crossings'][0]
+                turning_point = poi['turning_points'][0]
+                last_baseline_crossing = poi['baseline_crossings'][-1]
+
+                # Plot t_ecc as a horizontal line
+                ax.hlines(y=-50, xmin=first_baseline_crossing, xmax=turning_point, colors='blue', linestyles='dashed',
+                          label=f't_ecc: {t_ecc:.3f} s')
+                ax.text((first_baseline_crossing + turning_point) / 2, 0, f't_ecc: {t_ecc:.3f} s', ha='center',
+                        color='blue')
+                # Plot t_con as a horizontal line
+                ax.hlines(y=-50, xmin=turning_point, xmax=last_baseline_crossing, colors='purple', linestyles='dashed',
+                          label=f't_con: {t_con:.3f} s')
+                ax.text((turning_point + last_baseline_crossing) / 2, 0, f't_con: {t_con:.3f} s', ha='center',
+                        color='purple')
+
+                # Plot t_total as a horizontal line
+                ax.hlines(y=-200, xmin=first_baseline_crossing, xmax=last_baseline_crossing, colors='orange', linestyles='dashed',
+                          label=f't_total: {t_total:.3f} s')
+                ax.text((first_baseline_crossing + last_baseline_crossing) / 2, -150, f't_total: {t_total:.3f} s', ha='center',
+                        color='orange')
+            except ValueError as e:
+                print(e)
 
             ax.set_title(f'Bounce Detailed View: {bounce_file_id}')
             ax.set_xlabel('Frames')
