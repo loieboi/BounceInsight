@@ -4,16 +4,28 @@ from tkinter import filedialog
 from tkinter import simpledialog
 from tkinter import messagebox
 
-def clean_and_reformat_data(file_path, output_file_path, name_to_id_map):
-    # Load the CSV file
+def collect_participant_ids(file_path, name_to_id_map):
     df = pd.read_csv(file_path, header=None)
+    participant_ids = []
+    current_participant_id = None
 
-    # Extract the metadata
-    metadata = df.iloc[0].dropna().values
-    participant_name = metadata[1].split(":")[-1].strip()
+    for _, row in df.iterrows():
+        if pd.notna(row[1]) and 'last name:' in row[1]:
+            # Extract participant name and map to ID
+            participant_name = row[1].split(":")[-1].strip()
+            print(participant_name)
+            current_participant_id = name_to_id_map.get(participant_name, 'Unknown')
+            print(current_participant_id)
+        elif pd.notna(row[0]) and row[0] == 'Rep':
+            # For each data row, append the current participant ID
+            participant_ids.append(current_participant_id)
 
-    # Get the participant ID from the name_to_id_map
-    participant_id = name_to_id_map.get(participant_name, 'Unknown')
+    print(participant_ids)
+
+    return participant_ids
+
+def clean_and_reformat_data(file_path, output_file_path, participant_ids):
+    df = pd.read_csv(file_path, header=None)
 
     # Identify the start index of the data
     data_start_index = df[df[0] == 'Rep'].index[0]
@@ -34,7 +46,7 @@ def clean_and_reformat_data(file_path, output_file_path, name_to_id_map):
     data = data.drop(columns=['Row Type', 'Rep Number', 'Extra1', 'Extra2'])
 
     # Add participant ID to the relevant rows
-    data.insert(0, 'participant_id', participant_id)
+    data.insert(0, 'participant_id', participant_ids)
 
     # Save the cleaned data to a new CSV file
     data.to_csv(output_file_path, index=False)
@@ -43,10 +55,10 @@ def clean_and_reformat_data(file_path, output_file_path, name_to_id_map):
 
 # Define the mapping of names to participant IDs
 name_to_id_map = {
-    'ACHERMANN': '03'
-    # Add other mappings as needed
+    # TODO: create external file to have all mapping data, also implement reading the file
 }
 
+# TODO: Instead of manual input, use fixed paths for input and output files
 # Create the Tkinter interface
 def main():
     root = tk.Tk()
@@ -78,11 +90,14 @@ def main():
     output_file_path = f"{output_dir}/{output_filename}.csv"
 
     try:
+        # Collect participant IDs
+        participant_ids = collect_participant_ids(file_path, name_to_id_map)
+
         # Clean and reformat the data
-        cleaned_file_path = clean_and_reformat_data(file_path, output_file_path, name_to_id_map)
+        cleaned_file_path = clean_and_reformat_data(file_path, output_file_path, participant_ids)
         messagebox.showinfo("Success", f"Cleaned data saved to: {cleaned_file_path}")
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred: {e}")
-
+# TODO: make callable not standalone script
 if __name__ == "__main__":
     main()
