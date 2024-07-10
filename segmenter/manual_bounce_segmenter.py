@@ -131,7 +131,7 @@ class ManualBounceSegmenter:
 
         # Read the existing CSV file into a DataFrame
         if os.path.exists(csv_file_path):
-            df = pd.read_csv(csv_file_path)
+            df = pd.read_csv(csv_file_path, dtype={'participant_id': str})
         else:
             df = pd.DataFrame(columns=new_data.columns)
 
