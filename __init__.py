@@ -1,3 +1,4 @@
+from .validation.validator import Validator
 from .analyser.bounce_analyser import BounceAnalyser
 from .segmenter.manual_bounce_segmenter import ManualBounceSegmenter
 from .utils.file_identifier import FileIdentifier
@@ -69,3 +70,7 @@ class BounceInsight:
     def identify_files(self):
         file_identifier = FileIdentifier()
         file_identifier.identify_files()
+
+    def validate(self):
+        validate_fp_data = Validator()
+        validate_fp_data.validate()
