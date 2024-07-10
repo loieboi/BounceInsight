@@ -335,9 +335,12 @@ class BounceAnalyser:
         return turning_force
 
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=False):
+        current_dir = os.path.dirname(os.path.abspath('__file__'))
+        validation_folder_path = os.path.join(current_dir, 'validation')
+        validation_csv_path = os.path.join(validation_folder_path, 'validation_forceplate.csv')
         # Load the validation_forceplate.csv file into a DataFrame
-        if os.path.exists('analyser/validation_forceplate.csv'):
-            df = pd.read_csv('analyser/validation_forceplate.csv', dtype={'participant_id': str})
+        if os.path.exists(validation_csv_path):
+            df = pd.read_csv(validation_csv_path, dtype={'participant_id': str})
         else:
             df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force'])
 
@@ -377,7 +380,7 @@ class BounceAnalyser:
             df.loc[mask, 'turning_force'] = str(turning_force)
 
         # Write the DataFrame back to the validation_forceplate.csv file
-        df.to_csv('analyser/validation_forceplate.csv', index=False)
+        df.to_csv(validation_csv_path, index=False)
 
         if verbose:
             print("Updated DataFrame:")
