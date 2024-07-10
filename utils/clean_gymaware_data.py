@@ -3,7 +3,8 @@ import os
 
 
 def read_name_to_id_map(file_path):
-    name_to_id_df = pd.read_csv(file_path)
+    # Read the CSV file ensuring that the 'id' column is treated as strings
+    name_to_id_df = pd.read_csv(file_path, dtype={'id': str})
     name_to_id_map = pd.Series(name_to_id_df.id.values, index=name_to_id_df.name).to_dict()
     return name_to_id_map
 
