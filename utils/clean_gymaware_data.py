@@ -49,8 +49,9 @@ def clean_and_reformat_data(file_path, output_file_path, participant_ids):
     # Drop unnecessary columns
     data = data.drop(columns=['Row Type', 'Rep Number', 'Extra1', 'Extra2'])
 
-    # Add participant ID to the relevant rows
+    # Add participant ID and file_name to the relevant rows
     data.insert(0, 'participant_id', participant_ids)
+    data.insert(0, 'file_name', '')
 
     # Save the cleaned data to a new CSV file
     data.to_csv(output_file_path, index=False)

@@ -335,7 +335,7 @@ class BounceAnalyser:
         return turning_force
 
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=False):
-        # Load the validation.csv file into a DataFrame
+        # Load the validation_forceplate.csv file into a DataFrame
         if os.path.exists('analyser/validation_forceplate.csv'):
             df = pd.read_csv('analyser/validation_forceplate.csv', dtype={'participant_id': str})
         else:
@@ -376,7 +376,7 @@ class BounceAnalyser:
             df.loc[mask, 't_total'] = str(t_total)
             df.loc[mask, 'turning_force'] = str(turning_force)
 
-        # Write the DataFrame back to the validation.csv file
+        # Write the DataFrame back to the validation_forceplate.csv file
         df.to_csv('analyser/validation_forceplate.csv', index=False)
 
         if verbose:
