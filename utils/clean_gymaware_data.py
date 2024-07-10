@@ -1,8 +1,12 @@
 import pandas as pd
-import tkinter as tk
-from tkinter import filedialog
-from tkinter import simpledialog
-from tkinter import messagebox
+import os
+
+
+def read_name_to_id_map(file_path):
+    name_to_id_df = pd.read_csv(file_path)
+    name_to_id_map = pd.Series(name_to_id_df.id.values, index=name_to_id_df.name).to_dict()
+    return name_to_id_map
+
 
 def collect_participant_ids(file_path, name_to_id_map):
     df = pd.read_csv(file_path, header=None)
@@ -13,9 +17,7 @@ def collect_participant_ids(file_path, name_to_id_map):
         if pd.notna(row[1]) and 'last name:' in row[1]:
             # Extract participant name and map to ID
             participant_name = row[1].split(":")[-1].strip()
-            print(participant_name)
             current_participant_id = name_to_id_map.get(participant_name, 'Unknown')
-            print(current_participant_id)
         elif pd.notna(row[0]) and row[0] == 'Rep':
             # For each data row, append the current participant ID
             participant_ids.append(current_participant_id)
@@ -23,6 +25,7 @@ def collect_participant_ids(file_path, name_to_id_map):
     print(participant_ids)
 
     return participant_ids
+
 
 def clean_and_reformat_data(file_path, output_file_path, participant_ids):
     df = pd.read_csv(file_path, header=None)
@@ -53,51 +56,19 @@ def clean_and_reformat_data(file_path, output_file_path, participant_ids):
 
     return output_file_path
 
-# Define the mapping of names to participant IDs
-name_to_id_map = {
-    # TODO: create external file to have all mapping data, also implement reading the file
-}
 
-# TODO: Instead of manual input, use fixed paths for input and output files
-# Create the Tkinter interface
-def main():
-    root = tk.Tk()
-    root.withdraw()  # Hide the root window
+def process_gymaware_data(name_to_id_file, input_file, output_file):
+    name_to_id_map = read_name_to_id_map(name_to_id_file)
 
-    # Ask the user to select the input CSV file
-    file_path = filedialog.askopenfilename(
-        title="Select the input CSV file",
-        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-    )
+    participant_ids = collect_participant_ids(input_file, name_to_id_map)
+    cleaned_file_path = clean_and_reformat_data(input_file, output_file, participant_ids)
+    return cleaned_file_path
 
-    if not file_path:
-        messagebox.showerror("Error", "No file selected. Exiting.")
-        return
 
-    # Ask the user to select the output location and specify the output filename
-    output_dir = filedialog.askdirectory(title="Select the output directory")
-
-    if not output_dir:
-        messagebox.showerror("Error", "No output directory selected. Exiting.")
-        return
-
-    output_filename = simpledialog.askstring("Output Filename", "Enter the output filename (without extension):")
-
-    if not output_filename:
-        messagebox.showerror("Error", "No output filename specified. Exiting.")
-        return
-
-    output_file_path = f"{output_dir}/{output_filename}.csv"
-
-    try:
-        # Collect participant IDs
-        participant_ids = collect_participant_ids(file_path, name_to_id_map)
-
-        # Clean and reformat the data
-        cleaned_file_path = clean_and_reformat_data(file_path, output_file_path, participant_ids)
-        messagebox.showinfo("Success", f"Cleaned data saved to: {cleaned_file_path}")
-    except Exception as e:
-        messagebox.showerror("Error", f"An error occurred: {e}")
 # TODO: make callable not standalone script
 if __name__ == "__main__":
-    main()
+    current_dir = os.path.dirname('__file__')
+    name_to_id_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/name_to_id_map.csv'))
+    input_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/bounce_data_gymaware.csv'))
+    output_file = os.path.abspath(os.path.join(current_dir, '..', 'analyser/validation_gymaware.csv'))
+    process_gymaware_data(name_to_id_file, input_file, output_file)
