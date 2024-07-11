@@ -29,7 +29,7 @@ def collect_participant_ids(file_path, name_to_id_map):
 def generate_file_names(participant_id, count):
     base_names = [
         "bounce70b", "bounce70nb", "bounce80b", "bounce80nb",
-        "fastb", "fastnb", "slowb", "slownb"
+        "slowb", "slownb", "fastb", "fastnb"
     ]
     file_names = []
 
