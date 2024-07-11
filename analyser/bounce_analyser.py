@@ -66,6 +66,11 @@ class BounceAnalyser:
 
             self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, plot=plot,verbose=verbose)
 
+            self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
+                                p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'],
+                                p_o_i[bounce_file_id]['turning_points'],
+                                verbose=verbose)
+
             self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=verbose)
 
             file_name = file_name.split('_', 1)[-1]
@@ -183,10 +188,6 @@ class BounceAnalyser:
             'baseline_crossings': baseline_crossings,
             'turning_points': turning_points
         }
-
-        self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
-                            p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'], p_o_i[bounce_file_id]['turning_points'],
-                            verbose=verbose)
 
     def find_highest_peaks(self, series, start, end, baseline, peak_prominence=25, turning_point_prominence=100):
         # Extract the portion of the series between the start and end
@@ -435,29 +436,40 @@ class BounceAnalyser:
                     ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='red', alpha=0.3)
 
             # Plot (if available) t_ecc and t_con
-            try:
-                first_baseline_crossing = poi['baseline_crossings'][0]
-                turning_point = poi['turning_points'][0]
-                last_baseline_crossing = poi['baseline_crossings'][-1]
+                    # Plot (if available) t_ecc and t_con
+                    try:
+                        if len(poi['baseline_crossings']) > 0 and len(poi['turning_points']) > 0:
+                            first_baseline_crossing = poi['baseline_crossings'][0]
+                            turning_point = poi['turning_points'][0]
+                            last_baseline_crossing = poi['baseline_crossings'][-1]
 
-                # Plot t_ecc as a horizontal line
-                ax.hlines(y=-50, xmin=first_baseline_crossing, xmax=turning_point, colors='blue', linestyles='dashed',
-                          label=f't_ecc: {t_ecc:.3f} s')
-                ax.text((first_baseline_crossing + turning_point) / 2, 0, f't_ecc: {t_ecc:.3f} s', ha='center',
-                        color='blue')
-                # Plot t_con as a horizontal line
-                ax.hlines(y=-50, xmin=turning_point, xmax=last_baseline_crossing, colors='purple', linestyles='dashed',
-                          label=f't_con: {t_con:.3f} s')
-                ax.text((turning_point + last_baseline_crossing) / 2, 0, f't_con: {t_con:.3f} s', ha='center',
-                        color='purple')
+                            # Plot t_ecc as a horizontal line
+                            ax.hlines(y=-50, xmin=first_baseline_crossing, xmax=turning_point, colors='blue',
+                                      linestyles='dashed',
+                                      label=f't_ecc: {t_ecc:.3f} s')
+                            ax.text((first_baseline_crossing + turning_point) / 2, 0, f't_ecc: {t_ecc:.3f} s',
+                                    ha='center',
+                                    color='blue')
+                            # Plot t_con as a horizontal line
+                            ax.hlines(y=-50, xmin=turning_point, xmax=last_baseline_crossing, colors='purple',
+                                      linestyles='dashed',
+                                      label=f't_con: {t_con:.3f} s')
+                            ax.text((turning_point + last_baseline_crossing) / 2, 0, f't_con: {t_con:.3f} s',
+                                    ha='center',
+                                    color='purple')
 
-                # Plot t_total as a horizontal line
-                ax.hlines(y=-200, xmin=first_baseline_crossing, xmax=last_baseline_crossing, colors='orange', linestyles='dashed',
-                          label=f't_total: {t_total:.3f} s')
-                ax.text((first_baseline_crossing + last_baseline_crossing) / 2, -150, f't_total: {t_total:.3f} s', ha='center',
-                        color='orange')
-            except ValueError as e:
-                print(e)
+                            # Plot t_total as a horizontal line
+                            ax.hlines(y=-200, xmin=first_baseline_crossing, xmax=last_baseline_crossing,
+                                      colors='orange', linestyles='dashed',
+                                      label=f't_total: {t_total:.3f} s')
+                            ax.text((first_baseline_crossing + last_baseline_crossing) / 2, -150,
+                                    f't_total: {t_total:.3f} s', ha='center',
+                                    color='orange')
+                        else:
+                            print(
+                                f"No baseline crossings or turning points detected for {bounce_file_id}. Skipping t_ecc, t_con, and t_total plots.")
+                    except Exception as e:
+                        print(f"Error plotting t_ecc, t_con, or t_total for {bounce_file_id}: {e}")
 
             ax.set_title(f'Bounce Detailed View: {bounce_file_id}')
             ax.set_xlabel('Frames')

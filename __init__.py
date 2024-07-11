@@ -3,6 +3,7 @@ from .analyser.bounce_analyser import BounceAnalyser
 from .segmenter.manual_bounce_segmenter import ManualBounceSegmenter
 from .utils.file_identifier import FileIdentifier
 from utils.reader import Reader, FPReader, FP3DReader, Raw_FP_Reader
+from .analyser.plot_data import DataPlotter
 import pandas as pd
 import os
 
@@ -71,6 +72,18 @@ class BounceInsight:
         file_identifier = FileIdentifier()
         file_identifier.identify_files()
 
-    def validate(self):
+    def validate(self, tolerance=0.05):
         validate_fp_data = Validator()
-        validate_fp_data.validate()
+        validate_fp_data.validate(tolerance=tolerance)
+
+    def plot_data(self, file_name=None, verbose=False):
+        if file_name is None:
+            file_name = input("Please enter the file name you want to plot: ")
+        current_dir = os.path.dirname(os.path.abspath('__file__'))
+        edited_filepath = os.path.abspath(os.path.join(self.filepath, '..', 'edited'))
+
+        edited_bounce_files = {file_name: pd.read_csv(os.path.join(edited_filepath, file_name + '.csv'))}
+
+        metadata_table_path = os.path.abspath(os.path.join(current_dir, 'files/participant_metadata_reference.xlsx'))
+        data_plotter = DataPlotter(self.metadata, metadata_table_path)
+        data_plotter.plot_bounce_data(edited_bounce_files, verbose=verbose)
