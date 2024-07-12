@@ -55,13 +55,13 @@ class BounceAnalyser:
                                                              bounce_files[bounce_file_id]['combined_force'])
 
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
-                dip_color = '\033[92m' if has_dip else '\033[91m'
-                print(f"{dip_color}Dip detected: {has_dip}\033[0m")
 
                 if verbose:
                     print(
                         f"File: {bounce_file_id}, t_ecc: {t_ecc:.3f} seconds, t_con: {t_con:.3f} seconds, t_total: {t_total:.3f} seconds")
                     print(f'Turning force: {turning_force:.2f} N')
+                    dip_color = '\033[92m' if has_dip else '\033[91m'
+                    print(f"{dip_color}Dip detected: {has_dip}\033[0m")
             else:
                 t_ecc = None
                 t_con = None
@@ -74,7 +74,7 @@ class BounceAnalyser:
 
             self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
                                 p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'],
-                                p_o_i[bounce_file_id]['turning_points'],
+                                p_o_i[bounce_file_id]['turning_points'], has_dip,
                                 verbose=verbose)
 
             self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=verbose)
@@ -234,7 +234,7 @@ class BounceAnalyser:
 
         return highest_pos_peaks, highest_neg_peaks, turning_pos_peaks
 
-    def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, turning_points,
+    def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings,turning_points, dip,
                        verbose=False):
         # TODO: Add info about dip or no dip before turning point
         # Load the points_of_interest.csv file into a DataFrame
@@ -243,7 +243,7 @@ class BounceAnalyser:
         else:
             df = pd.DataFrame(
                 columns=['file_name', 'participant_id', 'start', 'end', 'pos_peaks', 'neg_peaks', 'baseline_crossings',
-                         'turning_point'])
+                         'turning_point', 'dip'])
 
         # Convert 'file_name' and 'participant_id' columns to string
         df['file_name'] = df['file_name'].astype(str)
@@ -258,6 +258,8 @@ class BounceAnalyser:
             df['baseline_crossings'] = df['baseline_crossings'].astype(str)
         if 'turning_point' in df.columns:
             df['turning_point'] = df['turning_point'].astype(str)
+        if 'dip' in df.columns:
+            df['dip'] = df['dip'].astype(str)
 
         # Check if a row with the same file_name and participant_id already exists
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
@@ -270,7 +272,8 @@ class BounceAnalyser:
                 'pos_peaks': str(pos_peaks),
                 'neg_peaks': str(neg_peaks),
                 'baseline_crossings': str(baseline_crossings),
-                'turning_point': str(turning_points[0]) if turning_points else ''
+                'turning_point': str(turning_points[0]) if turning_points else '',
+                'dip': str(dip)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
@@ -282,12 +285,14 @@ class BounceAnalyser:
             neg_peaks = [peak + start_frame for peak in neg_peaks]
             baseline_crossings = [crossing + start_frame for crossing in baseline_crossings]
             turning_point = turning_points[0] + start_frame if turning_points else ''
+            dip = str(dip)
 
             # Update the pos_peaks, neg_peaks, baseline_crossings, and turning_point columns for that row with the new data
             df.loc[mask, 'pos_peaks'] = str(pos_peaks)
             df.loc[mask, 'neg_peaks'] = str(neg_peaks)
             df.loc[mask, 'baseline_crossings'] = str(baseline_crossings)
             df.loc[mask, 'turning_point'] = str(turning_point)
+            df.loc[mask, 'dip'] = dip
 
         # Write the DataFrame back to the points_of_interest.csv file
         df.to_csv('analyser/points_of_interest.csv', index=False)
