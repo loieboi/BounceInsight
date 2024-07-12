@@ -1,4 +1,6 @@
 import pandas as pd
+import openpyxl
+from openpyxl.styles import PatternFill
 import numpy as np
 import os
 
@@ -74,10 +76,53 @@ class Validator:
         # Filter out rows where all differences are None
         validation_df = validation_df.dropna(subset=['t_ecc_diff', 't_con_diff', 't_total_diff', 'turning_force_diff'],
                                              how='all')
-        # TODO: Crazy idea, save it into Excel file and then color the cells based on the comparison result based on
-        #  absolute values, t_ecc_diff > 0.2s -> red, t_ecc_diff < 0.2s -> green, t_con_diff > 0.2s -> red,
-        #  t_con_diff < 0.2s -> green, t_total_diff > 0.4s -> red, t_total_diff < 0.4s -> green, turning_force_diff >
-        #  100N -> red, turning_force_diff < 100N -> green Output validation results
+
+        self.create_excel(validation_df)
         validation_df.to_csv('validation/validation_results.csv', index=False)
         print(validation_df.head())
         print('Validation complete. Results saved to validation/validation_results.csv')
+
+    def create_excel(self, validation_df):
+        # Define the Excel file path
+        excel_path = 'validation/validation_results.xlsx'
+
+        # Save the DataFrame to an Excel file
+        validation_df.to_excel(excel_path, index=False)
+
+        # Load the workbook and select the active worksheet
+        wb = openpyxl.load_workbook(excel_path)
+        ws = wb.active
+
+        # Define fill styles for conditional formatting
+        green_fill = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+        red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+
+        # Apply conditional formatting based on specified criteria
+        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                if cell.column_letter in ['C', 'E', 'G']:  # t_ecc_diff, t_con_diff, t_total_diff
+                    try:
+                        if cell.value is not None:
+                            if (cell.column_letter == 'C' or cell.column_letter == 'E') and cell.value < 0.25:
+                                cell.fill = green_fill
+                            elif (cell.column_letter == 'C' or cell.column_letter == 'E') and cell.value > 0.25:
+                                cell.fill = red_fill
+                            elif cell.column_letter == 'G' and cell.value < 0.5:
+                                cell.fill = green_fill
+                            elif cell.column_letter == 'G' and cell.value > 0.5:
+                                cell.fill = red_fill
+                    except TypeError:
+                        pass
+                elif cell.column_letter == 'I':  # turning_force_diff
+                    try:
+                        if cell.value is not None:
+                            if cell.value < 200:
+                                cell.fill = green_fill
+                            elif cell.value > 200:
+                                cell.fill = red_fill
+                    except TypeError:
+                        pass
+
+        # Save the workbook
+        wb.save(excel_path)
+        print(f'Validation results saved to {excel_path}')
