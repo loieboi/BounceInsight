@@ -53,6 +53,11 @@ class BounceAnalyser:
                 t_total = self.calculate_t_total(p_o_i, bounce_file_id)
                 turning_force = self.calculate_turning_force(p_o_i, bounce_file_id,
                                                              bounce_files[bounce_file_id]['combined_force'])
+
+                has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
+                dip_color = '\033[92m' if has_dip else '\033[91m'
+                print(f"{dip_color}Dip detected: {has_dip}\033[0m")
+
                 if verbose:
                     print(
                         f"File: {bounce_file_id}, t_ecc: {t_ecc:.3f} seconds, t_con: {t_con:.3f} seconds, t_total: {t_total:.3f} seconds")
@@ -62,6 +67,7 @@ class BounceAnalyser:
                 t_con = None
                 t_total = None
                 turning_force = None
+                has_dip = False
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
             self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, plot=plot,verbose=verbose)
@@ -230,6 +236,7 @@ class BounceAnalyser:
 
     def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, turning_points,
                        verbose=False):
+        # TODO: Add info about dip or no dip before turning point
         # Load the points_of_interest.csv file into a DataFrame
         if os.path.exists('analyser/points_of_interest.csv'):
             df = pd.read_csv('analyser/points_of_interest.csv', dtype={'participant_id': str})
@@ -335,10 +342,24 @@ class BounceAnalyser:
         turning_force = combined_force.iloc[turning_point]
         return turning_force
 
-    def find_dip_bounce(self, p_o_i, bounce_file_id):
+    def find_dip_bounce(self, p_o_i, bounce_file_id, frames_before_turning_point=500):
         poi = p_o_i[bounce_file_id]
+        turning_point = poi['turning_points'][0] if poi['turning_points'] else None
 
-        pass
+        if turning_point is not None:
+            # Find the range to check for a dip
+            start_check = max(turning_point - frames_before_turning_point, 0)
+            end_check = turning_point
+
+            # Check for negative peaks within the range
+            dips = [peak for peak in poi['neg_peaks'] if start_check <= peak <= end_check]
+
+            # Determine if there is a dip
+            has_dip = len(dips) > 0
+        else:
+            has_dip = False
+
+        return has_dip
 
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))

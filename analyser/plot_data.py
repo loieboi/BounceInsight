@@ -28,6 +28,9 @@ class DataPlotter(BounceAnalyser):
                 t_total = self.calculate_t_total(p_o_i, bounce_file_id)
                 turning_force = self.calculate_turning_force(p_o_i, bounce_file_id,
                                                              bounce_files[bounce_file_id]['combined_force'])
+                has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
+                dip_color = '\033[92m' if has_dip else '\033[91m'
+                print(f"{dip_color}Dip detected: {has_dip}\033[0m")
             else:
                 t_ecc = None
                 t_con = None
