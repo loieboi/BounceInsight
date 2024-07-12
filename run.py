@@ -54,6 +54,20 @@ def manual_segment_wrapper():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to segment manually: {e}")
 
+def validate_wrapper():
+    try:
+        boin.validate(verbose=False)
+        messagebox.showinfo("Success", "Validation completed successfully.")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to validate: {e}")
+
+def plot_data_wrapper():
+    file_name_input = simpledialog.askstring("Input", "Enter file name:")
+    try:
+        boin.plot_data(file_name=file_name_input, verbose=False)
+        messagebox.showinfo("Success", f'{file_name_input}.csv plotted successfully.')
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to plot data: {e}")
 
 # Initialize the root window
 root = tk.Tk()
@@ -61,7 +75,7 @@ root.title("BounceInsight")
 
 # Center the window on the screen
 window_width = 400
-window_height = 300
+window_height = 500
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 position_top = int(screen_height / 2 - window_height / 2)
@@ -85,11 +99,21 @@ title_label.pack(pady=10)
 identify_btn = ttk.Button(main_frame, text="Identify Files", command=identify_files_wrapper)
 identify_btn.pack(pady=10, fill=tk.X)
 
+segment_btn = ttk.Button(main_frame, text="Manual Segment", command=manual_segment_wrapper)
+segment_btn.pack(pady=10, fill=tk.X)
+
 analyse_btn = ttk.Button(main_frame, text="Analyse Bounce", command=analyse_bounce_wrapper)
 analyse_btn.pack(pady=10, fill=tk.X)
 
-segment_btn = ttk.Button(main_frame, text="Manual Segment", command=manual_segment_wrapper)
-segment_btn.pack(pady=10, fill=tk.X)
+validate_btn = ttk.Button(main_frame, text="Validate", command=validate_wrapper)
+validate_btn.pack(pady=10, fill=tk.X)
+
+plot_btn = ttk.Button(main_frame, text="Plot Data", command=plot_data_wrapper)
+plot_btn.pack(pady=10, fill=tk.X)
+
+exit_btn = ttk.Button(main_frame, text="Exit", command=root.quit)
+exit_btn.pack(pady=10, fill=tk.X)
+
 
 root.attributes('-topmost', True)
 root.after(500, lambda: root.attributes('-topmost', False))
