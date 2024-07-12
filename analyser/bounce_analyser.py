@@ -335,6 +335,11 @@ class BounceAnalyser:
         turning_force = combined_force.iloc[turning_point]
         return turning_force
 
+    def find_dip_bounce(self, p_o_i, bounce_file_id):
+        poi = p_o_i[bounce_file_id]
+
+        pass
+
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
@@ -415,7 +420,7 @@ class BounceAnalyser:
 
             # Plot the turning points with blue circles
             for tp in poi['turning_points']:
-                ax.plot(tp, combined[tp], 'bo')  # 'bo' specifies blue circles
+                ax.plot(tp, combined[tp], 'mo', markersize=10)  # 'bo' specifies blue circles
                 ax.text(tp, combined[tp], f'x={tp}, y={round(combined[tp], 1)}', fontsize=9, verticalalignment='bottom')
 
             # Ensure baseline is properly defined
@@ -436,7 +441,6 @@ class BounceAnalyser:
                     ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='red', alpha=0.3)
 
             # Plot (if available) t_ecc and t_con
-                    # Plot (if available) t_ecc and t_con
                     try:
                         if len(poi['baseline_crossings']) > 0 and len(poi['turning_points']) > 0:
                             first_baseline_crossing = poi['baseline_crossings'][0]
@@ -474,7 +478,12 @@ class BounceAnalyser:
             ax.set_title(f'Bounce Detailed View: {bounce_file_id}')
             ax.set_xlabel('Frames')
             ax.set_ylabel('Combined Force')
-            plt.legend()
+
+            # For some reason, the legend is not showing up in the plot correctly, so I ask for a janky solution
+            handles, labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            ax.legend(by_label.values(), by_label.keys())
+
             plt.show()
         else:
             pass
