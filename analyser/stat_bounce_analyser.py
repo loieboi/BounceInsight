@@ -1,6 +1,10 @@
 import pandas as pd
 import os
 from scipy import stats
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
 from .bounce_analyser import BounceAnalyser
 
 class StatBounceAnalyser(BounceAnalyser):
@@ -9,7 +13,7 @@ class StatBounceAnalyser(BounceAnalyser):
         super().__init__(metadata)
         self.metadata_table = pd.read_excel(metadata_table_path)
 
-    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False):
+    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, metric=None, comparison_type=None):
         p_o_i = {}
 
         for bounce_file_id in edited_bounce_files.keys():
@@ -52,8 +56,10 @@ class StatBounceAnalyser(BounceAnalyser):
             metric2 = input("Please enter the second metric: ")
             self.calculate_cor(p_o_i, metric1, metric2)
         elif analysis_type == 'anova':
-            metric = input("Please enter the metric for ANOVA: ")
-            self.calculate_anova(p_o_i, metric)
+            if metric and comparison_type:
+                self.calculate_anova(p_o_i, metric, comparison_type)
+            else:
+                print("For ANOVA analysis, please specify both metric and comparison_type.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -89,5 +95,74 @@ class StatBounceAnalyser(BounceAnalyser):
         correlation, p_val = stats.pearsonr(metric1_values, metric2_values)
         print(f"Correlation between {metric1} and {metric2}: correlation = {correlation:.3f}, p-value = {p_val:.3f}")
 
-    def calculate_anova(self, p_o_i, metric, factor):
-        pass
+    def calculate_anova(self, p_o_i, metric, comparison_type):
+        data = []
+        print('---------------------------------')
+        print("Starting ANOVA calculation...")
+        print(f"Metric: {metric}")
+        print(f"Comparison Type: {comparison_type}")
+
+        for file_id, values in p_o_i.items():
+            parts = file_id.split('_')
+            if len(parts) >= 2:
+                group = parts[1].split('.')[0]  # Remove the file extension (e.g., 'bounce70b1')
+                base_group = group[:-1]  # Remove the numeric suffix to get the base group (e.g., 'bounce70b')
+
+                if comparison_type.startswith('weight'):
+                    if '70b' in base_group or '80b' in base_group or '70nb' in base_group or '80nb' in base_group:
+                        group = base_group
+                elif comparison_type.startswith('speed'):
+                    if 'slowb' in base_group or 'fastb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
+                        group = base_group
+                else:
+                    print(f"Invalid comparison type: {comparison_type}")
+                    return
+
+                if metric in values:
+                    data.append({
+                        'file_id': file_id,
+                        'group': group,
+                        metric: values[metric]
+                    })
+        df = pd.DataFrame(data)
+
+        if not data:
+            print("No data found to prepare ANOVA DataFrame")
+            return
+
+        comparison_dict = {
+            'weightb': ('bounce70b', 'bounce80b'),
+            'weightnb': ('bounce70nb', 'bounce80nb'),
+            'speedb': ('slowb', 'fastb'),
+            'speednb': ('slownb', 'fastnb')
+        }
+
+        if comparison_type not in comparison_dict:
+            print(f"Invalid comparison type: {comparison_type}")
+            return
+
+        group1, group2 = comparison_dict[comparison_type]
+
+        df_filtered = df[
+            (df['group'] == group1) | (df['group'] == group2)].copy()  # Use .copy() to avoid SettingWithCopyWarning
+        df_filtered.loc[:, 'group'] = df_filtered['group'].astype('category')
+
+        if df_filtered.empty:
+            print(f"No data available for comparison between {group1} and {group2}")
+            return
+
+        if metric not in df_filtered.columns:
+            print(f"Metric {metric} not found in data")
+            return
+
+        model = ols(f'{metric} ~ C(group)', data=df_filtered).fit()
+        anova_table = sm.stats.anova_lm(model, typ=2)
+
+        print(f'ANOVA results for {metric} comparing {group1} and {group2}:')
+        print(anova_table)
+
+        # Plotting
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(x='group', y=metric, data=df_filtered)
+        plt.title(f'{metric} comparison between {group1} and {group2}')
+        plt.show()
