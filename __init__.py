@@ -4,6 +4,7 @@ from .segmenter.manual_bounce_segmenter import ManualBounceSegmenter
 from .utils.file_identifier import FileIdentifier
 from utils.reader import Reader, FPReader, FP3DReader, Raw_FP_Reader
 from .analyser.plot_data import DataPlotter
+from .analyser.stat_bounce_analyser import StatBounceAnalyser
 import pandas as pd
 import os
 
@@ -87,3 +88,16 @@ class BounceInsight:
         metadata_table_path = os.path.abspath(os.path.join(current_dir, 'files/participant_metadata_reference.xlsx'))
         data_plotter = DataPlotter(self.metadata, metadata_table_path)
         data_plotter.plot_bounce_data(edited_bounce_files, verbose=verbose)
+
+    def run_analysis(self, analysis_type=None, verbose=False):
+        if analysis_type is None:
+            analysis_type = input("Please enter the type of analysis you want: ")
+        current_dir = os.path.dirname(os.path.abspath('__file__'))
+        edited_filepath = os.path.abspath(os.path.join(self.filepath, '..', 'edited'))
+
+        edited_bounce_files = {f: pd.read_csv(os.path.join(edited_filepath, f)) for f in
+                               os.listdir(edited_filepath) if f.endswith('.csv')}
+
+        metadata_table_path = os.path.abspath(os.path.join(current_dir, 'files/participant_metadata_reference.xlsx'))
+        stat_analyser = StatBounceAnalyser(self.metadata, metadata_table_path)
+        stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, verbose=verbose)

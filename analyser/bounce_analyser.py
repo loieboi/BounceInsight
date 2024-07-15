@@ -234,9 +234,8 @@ class BounceAnalyser:
 
         return highest_pos_peaks, highest_neg_peaks, turning_pos_peaks
 
-    def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings,turning_points, dip,
+    def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, turning_points, dip,
                        verbose=False):
-        # TODO: Add info about dip or no dip before turning point
         # Load the points_of_interest.csv file into a DataFrame
         if os.path.exists('analyser/points_of_interest.csv'):
             df = pd.read_csv('analyser/points_of_interest.csv', dtype={'participant_id': str})
