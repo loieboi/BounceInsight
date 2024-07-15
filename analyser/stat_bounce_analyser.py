@@ -1,8 +1,6 @@
 import pandas as pd
 import os
-import numpy as np
 from .bounce_analyser import BounceAnalyser
-
 
 class StatBounceAnalyser(BounceAnalyser):
 
@@ -40,44 +38,49 @@ class StatBounceAnalyser(BounceAnalyser):
             else:
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
-            # Perform the requested analysis
-        if analysis_type == 'all':
-            self.summary_average_all(p_o_i)
+        # Perform the requested analysis
+        if analysis_type == 'all_bounces':
+            self.summary_statistics(p_o_i, None)
+        elif analysis_type == 'bounce70b':
+            self.summary_statistics_by_type(p_o_i, 'bounce70b')
+        elif analysis_type == 'bounce70nb':
+            self.summary_statistics_by_type(p_o_i, 'bounce70nb')
+        elif analysis_type == 'bounce80b':
+            self.summary_statistics_by_type(p_o_i, 'bounce80b')
+        elif analysis_type == 'bounce80nb':
+            self.summary_statistics_by_type(p_o_i, 'bounce80nb')
+        elif analysis_type == 'slowb':
+            self.summary_statistics_by_type(p_o_i, 'slowb')
+        elif analysis_type == 'slownb':
+            self.summary_statistics_by_type(p_o_i, 'slownb')
+        elif analysis_type == 'fastb':
+            self.summary_statistics_by_type(p_o_i, 'fastb')
+        elif analysis_type == 'fastnb':
+            self.summary_statistics_by_type(p_o_i, 'fastnb')
+        else:
+            print(f"Invalid analysis type: {analysis_type}")
 
-        if analysis_type == 'summary_average_all':
-            self.summary_average_all(p_o_i)
+    def summary_statistics_by_type(self, p_o_i, bounce_type):
+        filtered_poi = {k: v for k, v in p_o_i.items() if bounce_type in k}
+        self.summary_statistics(filtered_poi, bounce_type)
 
-        if analysis_type == '':
-            pass
-
-    def summary_average_all(self, p_o_i):
-        # Initialize lists to store values for each metric
-        t_ecc_values = []
-        t_con_values = []
-        t_total_values = []
-        turning_force_values = []
+    def summary_statistics(self, p_o_i, bounce_type=None):
+        metrics = ['t_ecc', 't_con', 't_total', 'turning_force']
+        summary = {metric: [] for metric in metrics}
 
         for file_id, data in p_o_i.items():
-            if 't_ecc' in data and data['t_ecc'] is not None:
-                t_ecc_values.append(data['t_ecc'])
-            if 't_con' in data and data['t_con'] is not None:
-                t_con_values.append(data['t_con'])
-            if 't_total' in data and data['t_total'] is not None:
-                t_total_values.append(data['t_total'])
-            if 'turning_force' in data and data['turning_force'] is not None:
-                turning_force_values.append(data['turning_force'])
-
-        # Calculate averages
-        avg_t_ecc = sum(t_ecc_values) / len(t_ecc_values) if t_ecc_values else None
-        avg_t_con = sum(t_con_values) / len(t_con_values) if t_con_values else None
-        avg_t_total = sum(t_total_values) / len(t_total_values) if t_total_values else None
-        avg_turning_force = sum(turning_force_values) / len(turning_force_values) if turning_force_values else None
-
-        print("Summary statistics for all bounces:")
-        print(f"Average t_ecc: {avg_t_ecc:.3f} seconds" if avg_t_ecc is not None else "Average t_ecc: N/A")
-        print(f"Average t_con: {avg_t_con:.3f} seconds" if avg_t_con is not None else "Average t_con: N/A")
-        print(f"Average t_total: {avg_t_total:.3f} seconds" if avg_t_total is not None else "Average t_total: N/A")
-        print(f"Average Turning Force: {avg_turning_force:.2f} N" if avg_turning_force is not None else "Average Turning Force: N/A")
-
-
-
+            for metric in metrics:
+                if metric in data and data[metric] is not None:
+                    summary[metric].append(data[metric])
+        print(f"Statistics for {bounce_type}:")
+        for metric in metrics:
+            values = summary[metric]
+            if values:
+                avg = sum(values) / len(values)
+                std_dev = pd.Series(values).std()
+                median = pd.Series(values).median()
+                min_val = min(values)
+                max_val = max(values)
+                print(f"{metric}; Avg: {avg:.3f}, Std Dev: {std_dev:.3f}, Median: {median:.3f}, Min: {min_val:.3f}, Max: {max_val:.3f}")
+            else:
+                print(f"{metric}; No data available")
