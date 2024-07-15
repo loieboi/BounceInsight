@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from scipy import stats
 from .bounce_analyser import BounceAnalyser
 
 class StatBounceAnalyser(BounceAnalyser):
@@ -39,24 +40,20 @@ class StatBounceAnalyser(BounceAnalyser):
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
         # Perform the requested analysis
-        if analysis_type == 'all_bounces':
-            self.summary_statistics(p_o_i, None)
-        elif analysis_type == 'bounce70b':
-            self.summary_statistics_by_type(p_o_i, 'bounce70b')
-        elif analysis_type == 'bounce70nb':
-            self.summary_statistics_by_type(p_o_i, 'bounce70nb')
-        elif analysis_type == 'bounce80b':
-            self.summary_statistics_by_type(p_o_i, 'bounce80b')
-        elif analysis_type == 'bounce80nb':
-            self.summary_statistics_by_type(p_o_i, 'bounce80nb')
-        elif analysis_type == 'slowb':
-            self.summary_statistics_by_type(p_o_i, 'slowb')
-        elif analysis_type == 'slownb':
-            self.summary_statistics_by_type(p_o_i, 'slownb')
-        elif analysis_type == 'fastb':
-            self.summary_statistics_by_type(p_o_i, 'fastb')
-        elif analysis_type == 'fastnb':
-            self.summary_statistics_by_type(p_o_i, 'fastnb')
+        if analysis_type == 'summary':
+            bounce_type = input("Please enter the bounce type you want to analyze: ")
+            if bounce_type == 'all' or None:
+                bounce_type = None
+                self.summary_statistics(p_o_i, bounce_type)
+            else:
+                self.summary_statistics_by_type(p_o_i, bounce_type)
+        elif analysis_type == 'cor':
+            metric1 = input("Please enter the first metric: ")
+            metric2 = input("Please enter the second metric: ")
+            self.calculate_cor(p_o_i, metric1, metric2)
+        elif analysis_type == 'anova':
+            metric = input("Please enter the metric for ANOVA: ")
+            self.calculate_anova(p_o_i, metric)
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -84,3 +81,13 @@ class StatBounceAnalyser(BounceAnalyser):
                 print(f"{metric}; Avg: {avg:.3f}, Std Dev: {std_dev:.3f}, Median: {median:.3f}, Min: {min_val:.3f}, Max: {max_val:.3f}")
             else:
                 print(f"{metric}; No data available")
+
+    def calculate_cor(self, p_o_i, metric1, metric2):
+        metric1_values = [data[metric1] for data in p_o_i.values() if metric1 in data and data[metric1] is not None]
+        metric2_values = [data[metric2] for data in p_o_i.values() if metric2 in data and data[metric2] is not None]
+
+        correlation, p_val = stats.pearsonr(metric1_values, metric2_values)
+        print(f"Correlation between {metric1} and {metric2}: correlation = {correlation:.3f}, p-value = {p_val:.3f}")
+
+    def calculate_anova(self, p_o_i, metric, factor):
+        pass
