@@ -97,7 +97,6 @@ class StatBounceAnalyser(BounceAnalyser):
 
     def calculate_anova(self, p_o_i, metric, comparison_type):
         data = []
-        print('---------------------------------')
         print("Starting ANOVA calculation...")
         print(f"Metric: {metric}")
         print(f"Comparison Type: {comparison_type}")
@@ -114,6 +113,41 @@ class StatBounceAnalyser(BounceAnalyser):
                 elif comparison_type.startswith('speed'):
                     if 'slowb' in base_group or 'fastb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
                         group = base_group
+                elif comparison_type == 'b_nb_all':
+                    if '70b' in base_group or '80b' in base_group or 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                elif comparison_type == 'b_nb_fast':
+                    if 'fastb' in base_group:
+                        group = 'fastb'
+                    elif 'fastnb' in base_group:
+                        group = 'fastnb'
+                elif comparison_type == 'b_nb_slow':
+                    if 'slowb' in base_group:
+                        group = 'slowb'
+                    elif 'slownb' in base_group:
+                        group = 'slownb'
+                elif comparison_type == 'b_nb_70':
+                    if '70b' in base_group:
+                        group = 'bounce70b'
+                    elif '70nb' in base_group:
+                        group = 'bounce70nb'
+                elif comparison_type == 'b_nb_80':
+                    if '80b' in base_group:
+                        group = 'bounce80b'
+                    elif '80nb' in base_group:
+                        group = 'bounce80nb'
+                elif comparison_type == 'b_nb_weight':
+                    if '70b' in base_group or '80b' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group:
+                        group = 'nobounce'
+                elif comparison_type == 'b_nb_speed':
+                    if 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
                 else:
                     print(f"Invalid comparison type: {comparison_type}")
                     return
@@ -124,17 +158,25 @@ class StatBounceAnalyser(BounceAnalyser):
                         'group': group,
                         metric: values[metric]
                     })
-        df = pd.DataFrame(data)
 
         if not data:
             print("No data found to prepare ANOVA DataFrame")
             return
 
+        df = pd.DataFrame(data)
+
         comparison_dict = {
             'weightb': ('bounce70b', 'bounce80b'),
             'weightnb': ('bounce70nb', 'bounce80nb'),
             'speedb': ('slowb', 'fastb'),
-            'speednb': ('slownb', 'fastnb')
+            'speednb': ('slownb', 'fastnb'),
+            'b_nb_all': ('bounce', 'nobounce'),
+            'b_nb_fast': ('fastb', 'fastnb'),
+            'b_nb_slow': ('slowb', 'slownb'),
+            'b_nb_70': ('bounce70b', 'bounce70nb'),
+            'b_nb_80': ('bounce80b', 'bounce80nb'),
+            'b_nb_weight': ('bounce', 'nobounce'),
+            'b_nb_speed': ('bounce', 'nobounce')
         }
 
         if comparison_type not in comparison_dict:

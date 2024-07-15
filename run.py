@@ -69,6 +69,9 @@ def plot_data_wrapper():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to plot data: {e}")
 
+def run_analysis_wrapper():
+    messagebox.showerror("Error", f"Feature not implemented into interface yet. Use Notebook instead.")
+
 # Initialize the root window
 root = tk.Tk()
 root.title("BounceInsight")
@@ -110,6 +113,9 @@ validate_btn.pack(pady=10, fill=tk.X)
 
 plot_btn = ttk.Button(main_frame, text="Plot Data", command=plot_data_wrapper)
 plot_btn.pack(pady=10, fill=tk.X)
+
+run_analysis_btn = ttk.Button(main_frame, text="Run Analysis", command=run_analysis_wrapper)
+run_analysis_btn.pack(pady=10, fill=tk.X)
 
 exit_btn = ttk.Button(main_frame, text="Exit", command=root.quit)
 exit_btn.pack(pady=10, fill=tk.X)
