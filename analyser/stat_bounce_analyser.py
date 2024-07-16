@@ -2,10 +2,12 @@ import pandas as pd
 import os
 from scipy import stats
 from scipy.stats import chi2_contingency
+from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+from statsmodels.stats.anova import AnovaRM
 from .bounce_analyser import BounceAnalyser
 
 class StatBounceAnalyser(BounceAnalyser):
@@ -14,7 +16,7 @@ class StatBounceAnalyser(BounceAnalyser):
         super().__init__(metadata)
         self.metadata_table = pd.read_excel(metadata_table_path)
 
-    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, comparison_type=None, metric=None):
+    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, comparison_type=None, metric=None, metric1=None, metric2=None):
         # --- Main script for statistical analysis which uses methods from the bounce_analyser.py script ---
         p_o_i = {}
 
@@ -54,9 +56,10 @@ class StatBounceAnalyser(BounceAnalyser):
             else:
                 self.summary_statistics_by_type(p_o_i, bounce_type)
         elif analysis_type == 'cor':
-            metric1 = input("Please enter the first metric: ")
-            metric2 = input("Please enter the second metric: ")
-            self.calculate_cor(p_o_i, metric1, metric2)
+            if metric1 and metric2:
+                self.calculate_cor(p_o_i, metric1, metric2)
+            else:
+                print("For correlation analysis, please specify both metric1 and metric2.")
         elif analysis_type == 'anova':
             if metric and comparison_type:
                 self.calculate_anova(p_o_i, metric, comparison_type)
@@ -67,6 +70,13 @@ class StatBounceAnalyser(BounceAnalyser):
                 self.calculate_contingency_table(p_o_i, comparison_type)
             else:
                 print("For Chi-square analysis, please specify comparison_type.")
+        elif analysis_type == 'regression':
+            if metric:
+                self.multiple_linear_regression(p_o_i, metric)
+            else:
+                print("For regression analysis, please specify the dependent variable.")
+        elif analysis_type == 'cluster':
+            self.cluster_analysis(p_o_i)
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -228,7 +238,7 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.title(f'{metric} comparison between {group1} and {group2}')
         plt.show()
 
-    def calculate_contingency_table(self, p_o_i, comparison_type):
+    def calculate_contingency_table(self, p_o_i, comparison_type):  # used only to look at dips
         data = {'group': [], 'has_dip': []}
 
         for file_id, values in p_o_i.items():
@@ -312,4 +322,50 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.title('Proportion of Dips in Bounce vs. No Bounce')
         plt.ylabel('Proportion of Dips')
         plt.xlabel('Group')
+        plt.show()
+
+    def multiple_linear_regression(self, p_o_i, dependent_variable):
+        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': [], 'speed': [], 'weight': [], 'has_dip': []}
+
+        for file_id, values in p_o_i.items():
+            if all(metric in values for metric in ['t_ecc', 't_con', 't_total', 'turning_force', 'has_dip']):
+                data['t_ecc'].append(values['t_ecc'])
+                data['t_con'].append(values['t_con'])
+                data['t_total'].append(values['t_total'])
+                data['turning_force'].append(values['turning_force'])
+                data['speed'].append(1 if 'fast' and 'slow' in file_id else 0)
+                data['weight'].append(1 if '80' and '70' in file_id else 0)
+                data['has_dip'].append(1 if values['has_dip'] else 0)
+
+        df = pd.DataFrame(data)
+
+        # Ensure the dependent variable is in the DataFrame
+        if dependent_variable not in df.columns:
+            print(f"Dependent variable {dependent_variable} not found in data.")
+            return
+
+        X = df.drop(columns=[dependent_variable])
+        y = df[dependent_variable]
+
+        X = sm.add_constant(X)
+        model = sm.OLS(y, X).fit()
+        print(model.summary())
+
+    def cluster_analysis(self, p_o_i):
+        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': []}
+
+        for file_id, values in p_o_i.items():
+            if 't_ecc' in values and 't_con' in values and 't_total' in values and 'turning_force' in values:
+                data['t_ecc'].append(values['t_ecc'])
+                data['t_con'].append(values['t_con'])
+                data['t_total'].append(values['t_total'])
+                data['turning_force'].append(values['turning_force'])
+
+        df = pd.DataFrame(data)
+        kmeans = KMeans(n_clusters=3)
+        df['cluster'] = kmeans.fit_predict(df)
+
+        plt.figure(figsize=(10, 6))
+        sns.scatterplot(data=df, x='t_ecc', y='turning_force', hue='cluster', palette='viridis')
+        plt.title('Cluster Analysis of Bounce Types')
         plt.show()

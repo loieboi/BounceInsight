@@ -73,10 +73,11 @@ class Validator:
         validation_df = validation_df.dropna(subset=['t_ecc_diff', 't_con_diff', 't_total_diff', 'turning_force_diff'],
                                              how='all')
 
-        self.create_excel(validation_df)
         validation_df.to_csv('validation/validation_results.csv', index=False)
-        print(validation_df.head())
-        print('Validation complete. Results saved to validation/validation_results.csv')
+        print('Results saved to validation/validation_results.csv')
+
+        self.create_excel(validation_df)
+        print('Validation complete')
 
     def create_excel(self, validation_df):
         excel_path = 'validation/validation_results.xlsx'
@@ -113,4 +114,4 @@ class Validator:
                         pass
 
         wb.save(excel_path)
-        print(f'Validation results saved to {excel_path}')
+        print(f'Visualized validation results saved to {excel_path}')

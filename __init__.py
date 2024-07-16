@@ -90,12 +90,9 @@ class BounceInsight:
         data_plotter = DataPlotter(self.metadata, metadata_table_path)
         data_plotter.plot_bounce_data(edited_bounce_files, verbose=verbose)
 
-    def run_statistics(self, analysis_type=None, comparison_type=None, metric=None, verbose=False):  # statistics
+    def run_statistics(self, analysis_type=None, comparison_type=None, metric=None, metric1=None, metric2=None, verbose=False):  # statistics
         if analysis_type is None:
             analysis_type = input("Please enter the type of analysis you want: ")
-        if analysis_type == 'anova' and (metric is None or comparison_type is None):
-            print("For ANOVA analysis, please specify both metric and comparison_type.")
-            return
 
         edited_filepath = os.path.abspath(os.path.join(self.filepath, '..', 'edited'))
 
@@ -111,5 +108,9 @@ class BounceInsight:
                                              metric=metric, comparison_type=comparison_type)
         elif analysis_type == 'chi2':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, comparison_type=comparison_type, verbose=verbose)
+        elif analysis_type == 'regression':
+            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric=metric, verbose=verbose)
+        elif analysis_type == 'cor':
+            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric1=metric1, metric2=metric2, verbose=verbose)
         else:
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, verbose=verbose)
