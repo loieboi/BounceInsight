@@ -10,6 +10,7 @@ import os
 
 
 class BounceInsight:
+    # --- Main Program and loading of data ---
     def __init__(self, filepath, reader_type='bounce'):
         self.filepath = filepath
         self.data_type = None
@@ -33,7 +34,7 @@ class BounceInsight:
         else:
             raise ValueError("Unsupported source type for determining data type")
 
-    def manual_segment(self, verbose=False):
+    def manual_segment(self, verbose=False):  # used to segment start and end of bounce data manually
         filepath = os.path.join(self.filepath, '..', 'raw')
 
         for filename in os.listdir(filepath):
@@ -49,7 +50,7 @@ class BounceInsight:
         manual_segment = ManualBounceSegmenter(self.metadata)
         manual_segment.segment_bounce(self.raw_bounce_files, verbose=verbose)
 
-    def analyse_bounce(self, id=None, plot=False, verbose=False):
+    def analyse_bounce(self, id=None, plot=False, verbose=False):  # used to analyze bounce data with points of interest
         if id is None:
             user_input = input("You have not specified an ID. Do you want to analyze all files? (yes/no): ")
             if user_input.lower() != 'yes':
@@ -69,15 +70,15 @@ class BounceInsight:
         bounce_analyser = BounceAnalyser(self.metadata)
         bounce_analyser.analyse_bounce(edited_bounce_files, plot=plot, verbose=verbose)
 
-    def identify_files(self):
+    def identify_files(self):  # a small script i wrote to get all the files I needed and named correctly with part_id
         file_identifier = FileIdentifier()
         file_identifier.identify_files()
 
-    def validate(self, tolerance=0.05):
+    def validate(self, tolerance=0.05):  # used to compare and then validate gymaware data with forceplate data
         validate_fp_data = Validator()
         validate_fp_data.validate(tolerance=tolerance)
 
-    def plot_data(self, file_name=None, verbose=False):
+    def plot_data(self, file_name=None, verbose=False):  # in case no analysis is needed, just plot the data
         if file_name is None:
             file_name = input("Please enter the file name you want to plot: ")
         current_dir = os.path.dirname(os.path.abspath('__file__'))
@@ -89,7 +90,7 @@ class BounceInsight:
         data_plotter = DataPlotter(self.metadata, metadata_table_path)
         data_plotter.plot_bounce_data(edited_bounce_files, verbose=verbose)
 
-    def run_analysis(self, analysis_type=None, metric=None, comparison_type=None, verbose=False):
+    def run_statistics(self, analysis_type=None, comparison_type=None, metric=None, verbose=False):  # statistics
         if analysis_type is None:
             analysis_type = input("Please enter the type of analysis you want: ")
         if analysis_type == 'anova' and (metric is None or comparison_type is None):
@@ -108,5 +109,7 @@ class BounceInsight:
         if analysis_type == 'anova':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, verbose=verbose,
                                              metric=metric, comparison_type=comparison_type)
+        elif analysis_type == 'chi2':
+            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, comparison_type=comparison_type, verbose=verbose)
         else:
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, verbose=verbose)

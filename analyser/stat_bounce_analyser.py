@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from scipy import stats
+from scipy.stats import chi2_contingency
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
@@ -13,7 +14,8 @@ class StatBounceAnalyser(BounceAnalyser):
         super().__init__(metadata)
         self.metadata_table = pd.read_excel(metadata_table_path)
 
-    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, metric=None, comparison_type=None):
+    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, comparison_type=None, metric=None):
+        # --- Main script for statistical analysis which uses methods from the bounce_analyser.py script ---
         p_o_i = {}
 
         for bounce_file_id in edited_bounce_files.keys():
@@ -41,9 +43,9 @@ class StatBounceAnalyser(BounceAnalyser):
                 p_o_i[bounce_file_id]['turning_force'] = turning_force
                 p_o_i[bounce_file_id]['has_dip'] = has_dip
             else:
-                print(f"No turning point detected for file {bounce_file_id}. Skipping...")
+                continue
 
-        # Perform the requested analysis
+        # Perform the requested analysis; not the most efficient way, but it works
         if analysis_type == 'summary':
             bounce_type = input("Please enter the bounce type you want to analyze: ")
             if bounce_type == 'all' or None:
@@ -60,6 +62,11 @@ class StatBounceAnalyser(BounceAnalyser):
                 self.calculate_anova(p_o_i, metric, comparison_type)
             else:
                 print("For ANOVA analysis, please specify both metric and comparison_type.")
+        elif analysis_type == 'chi2':
+            if comparison_type:
+                self.calculate_contingency_table(p_o_i, comparison_type)
+            else:
+                print("For Chi-square analysis, please specify comparison_type.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -104,8 +111,8 @@ class StatBounceAnalyser(BounceAnalyser):
         for file_id, values in p_o_i.items():
             parts = file_id.split('_')
             if len(parts) >= 2:
-                group = parts[1].split('.')[0]  # Remove the file extension (e.g., 'bounce70b1')
-                base_group = group[:-1]  # Remove the numeric suffix to get the base group (e.g., 'bounce70b')
+                group = parts[1].split('.')[0]
+                base_group = group[:-1]
 
                 if comparison_type.startswith('weight'):
                     if '70b' in base_group or '80b' in base_group or '70nb' in base_group or '80nb' in base_group:
@@ -123,31 +130,43 @@ class StatBounceAnalyser(BounceAnalyser):
                         group = 'fastb'
                     elif 'fastnb' in base_group:
                         group = 'fastnb'
+                    else:
+                        continue
                 elif comparison_type == 'b_nb_slow':
                     if 'slowb' in base_group:
                         group = 'slowb'
                     elif 'slownb' in base_group:
                         group = 'slownb'
+                    else:
+                        continue
                 elif comparison_type == 'b_nb_70':
                     if '70b' in base_group:
                         group = 'bounce70b'
                     elif '70nb' in base_group:
                         group = 'bounce70nb'
+                    else:
+                        continue
                 elif comparison_type == 'b_nb_80':
                     if '80b' in base_group:
                         group = 'bounce80b'
                     elif '80nb' in base_group:
                         group = 'bounce80nb'
+                    else:
+                        continue
                 elif comparison_type == 'b_nb_weight':
                     if '70b' in base_group or '80b' in base_group:
                         group = 'bounce'
                     elif '70nb' in base_group or '80nb' in base_group:
                         group = 'nobounce'
+                    else:
+                        continue
                 elif comparison_type == 'b_nb_speed':
                     if 'slowb' in base_group or 'fastb' in base_group:
                         group = 'bounce'
                     elif 'slownb' in base_group or 'fastnb' in base_group:
                         group = 'nobounce'
+                    else:
+                        continue
                 else:
                     print(f"Invalid comparison type: {comparison_type}")
                     return
@@ -207,4 +226,90 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.figure(figsize=(10, 6))
         sns.boxplot(x='group', y=metric, data=df_filtered)
         plt.title(f'{metric} comparison between {group1} and {group2}')
+        plt.show()
+
+    def calculate_contingency_table(self, p_o_i, comparison_type):
+        data = {'group': [], 'has_dip': []}
+
+        for file_id, values in p_o_i.items():
+            parts = file_id.split('_')
+            if len(parts) >= 2:
+                group = parts[1].split('.')[0]
+                base_group = group[:-1]
+
+                if comparison_type == 'b_nb_all':
+                    if '70b' in base_group or '80b' in base_group or 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                elif comparison_type == 'b_nb_fast':
+                    if 'fastb' in base_group:
+                        group = 'fastb'
+                    elif 'fastnb' in base_group:
+                        group = 'fastnb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_slow':
+                    if 'slowb' in base_group:
+                        group = 'slowb'
+                    elif 'slownb' in base_group:
+                        group = 'slownb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_70':
+                    if '70b' in base_group:
+                        group = 'bounce70b'
+                    elif '70nb' in base_group:
+                        group = 'bounce70nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_80':
+                    if '80b' in base_group:
+                        group = 'bounce80b'
+                    elif '80nb' in base_group:
+                        group = 'bounce80nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_weight':
+                    if '70b' in base_group or '80b' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_speed':
+                    if 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                else:
+                    print(f"Invalid comparison type: {comparison_type}")
+                    return
+
+                if 'has_dip' in values:
+                    data['group'].append(group)
+                    data['has_dip'].append(values['has_dip'])
+                else:
+                    print(f"Missing 'has_dip' for file_id: {file_id}")
+
+        if not data['group']:
+            print("No data found to prepare contingency table")
+            return
+
+        df = pd.DataFrame(data)
+        contingency_table = pd.crosstab(df['group'], df['has_dip'])
+        print("Contingency Table:")
+        print(contingency_table)
+
+        chi2, p, dof, expected = chi2_contingency(contingency_table)
+        print(f"Chi-Square Test:\nChi2: {chi2}, p-value: {p}, Degrees of Freedom: {dof}")
+
+        # Plotting
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x='group', y='has_dip', data=df.groupby('group')['has_dip'].mean().reset_index())
+        plt.title('Proportion of Dips in Bounce vs. No Bounce')
+        plt.ylabel('Proportion of Dips')
+        plt.xlabel('Group')
         plt.show()

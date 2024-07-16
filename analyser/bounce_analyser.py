@@ -32,21 +32,24 @@ class BounceAnalyser:
         bounce_load_table = os.path.abspath(os.path.join(current_dir, '.', 'files/participant_metadata_reference.xlsx'))
         bounce_load_table = pd.read_excel(bounce_load_table)
 
-        progress_bar = tqdm(edited_bounce_files, desc="Processing files", colour='red')
+        progress_bar = tqdm(edited_bounce_files, desc="Processing files", colour='red')  # Not very important feature: a loading bar
 
         # --- Initialize DataFrames ---
         for bounce_file_id in progress_bar:
             progress_bar.set_description(f"Processing {bounce_file_id}")
-            # Load Important Information
             file_name, file_ext = os.path.splitext(bounce_file_id)
             participant_id = bounce_file_id.split('_')[0]
+            # --- Update Metadata ---
             self.update_metadata(bounce_load_table, participant_id, file_name, verbose=verbose)
-
+            # --- Clean Edited Bounce Files ---
             bounce_files = self.clean_edited_bounce_files(edited_bounce_files, bounce_file_id)
 
             baseline = (self.metadata['bodyweight'] + self.metadata['load']) * 9.81
+
+            # --- Search for Points of Interest ---
             self.search_poi(bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name, verbose=verbose)
 
+            # --- If there is a turning point, calculate other poi's ---
             if p_o_i[bounce_file_id]['turning_points']:
                 t_ecc = self.calculate_t_ecc(p_o_i, bounce_file_id)
                 t_con = self.calculate_t_con(p_o_i, bounce_file_id)
@@ -70,15 +73,20 @@ class BounceAnalyser:
                 has_dip = False
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
+            # --- Plot Points of Interest in the correct graph (index is zeroed, so not applicable to raw files,
+            # but in poi.csv the values are correct) ---
             self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, plot=plot,verbose=verbose)
 
+            # --- Update CSV File with points of interests ---
             self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
                                 p_o_i[bounce_file_id]['neg_peaks'], p_o_i[bounce_file_id]['baseline_crossings'],
                                 p_o_i[bounce_file_id]['turning_points'], has_dip,
                                 verbose=verbose)
 
+            # --- Update CSV File with validation data for validator.py file ---
             self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, verbose=verbose)
 
+            # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
             if file_name.startswith('bounce70b'):
                 bounce_dict_70[bounce_file_id] = bounce_files
@@ -139,7 +147,8 @@ class BounceAnalyser:
         load_70 = participant_row['bounce70_load'].values[0]
         load_80 = participant_row['bounce80_load'].values[0]
 
-        # print(f'Participant: {participant_id}')
+        # This logic is used to load the correct load and bodyweight
+        # for each of the participant by using the files prefix
 
         file_name = file_name.split('_', 1)[-1]
 
@@ -175,13 +184,13 @@ class BounceAnalyser:
         for i in range(len(baseline_crossings) - 1):
             start = baseline_crossings[i]
             end = baseline_crossings[i + 1]
-            # Find the two highest peaks between these two baseline crossings
+            # Find the two (for reason used later) the highest peaks between these two baseline crossings
             pos_peaks, neg_peaks, turning_peaks = self.find_highest_peaks(combined, start, end, baseline)
             highest_pos_peaks.extend(pos_peaks)
             highest_neg_peaks.extend(neg_peaks)
             turning_pos_peaks.extend(turning_peaks)
 
-        # Find turning points
+        # Find turning points - here are the two peaks used, since some of the t_con don't have baseline crossings
         turning_point = self.find_turning_point(turning_pos_peaks)
         turning_points = [turning_point] if turning_point is not None else []
 
@@ -207,7 +216,7 @@ class BounceAnalyser:
         highest_pos_peaks = []
         highest_neg_peaks = []
 
-        # Ensure that we only consider peaks above/below the baseline
+        # Ensure that we only consider peaks above/below the baseline otherwise we have a mess
         pos_peaks = [p for p in pos_peaks if portion.iloc[p] > baseline]
         neg_peaks = [n for n in neg_peaks if portion.iloc[n] < baseline]
 
@@ -217,7 +226,7 @@ class BounceAnalyser:
         neg_peaks_sorted = sorted(neg_peaks, key=lambda x: neg_properties["prominences"][np.where(neg_peaks == x)][0],
                                   reverse=True)
 
-        # Take the two highest peaks if they exist
+        # Take the two highest peaks if they exist - same reason for turning points
         if len(pos_peaks_sorted) > 0:
             highest_pos_peaks.append(pos_peaks_sorted[0] + start)
         if len(pos_peaks_sorted) > 1:
@@ -236,7 +245,6 @@ class BounceAnalyser:
 
     def update_csv_poi(self, file_name, participant_id, pos_peaks, neg_peaks, baseline_crossings, turning_points, dip,
                        verbose=False):
-        # Load the points_of_interest.csv file into a DataFrame
         if os.path.exists('analyser/points_of_interest.csv'):
             df = pd.read_csv('analyser/points_of_interest.csv', dtype={'participant_id': str})
         else:
@@ -244,7 +252,8 @@ class BounceAnalyser:
                 columns=['file_name', 'participant_id', 'start', 'end', 'pos_peaks', 'neg_peaks', 'baseline_crossings',
                          'turning_point', 'dip'])
 
-        # Convert 'file_name' and 'participant_id' columns to string
+        # Convert 'file_name' and 'participant_id' columns to string -- otherwise 04 --> 4 and for some reason I
+        # stuck to the "0"
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
 
@@ -260,7 +269,7 @@ class BounceAnalyser:
         if 'dip' in df.columns:
             df['dip'] = df['dip'].astype(str)
 
-        # Check if a row with the same file_name and participant_id already exists
+        # Check if a row with the same file_name and participant_id already exists --> no duplicates
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
         if df[mask].empty:
@@ -286,14 +295,14 @@ class BounceAnalyser:
             turning_point = turning_points[0] + start_frame if turning_points else ''
             dip = str(dip)
 
-            # Update the pos_peaks, neg_peaks, baseline_crossings, and turning_point columns for that row with the new data
+            # Update the pos_peaks, neg_peaks, baseline_crossings
+            # and turning_point columns for that row with the new data
             df.loc[mask, 'pos_peaks'] = str(pos_peaks)
             df.loc[mask, 'neg_peaks'] = str(neg_peaks)
             df.loc[mask, 'baseline_crossings'] = str(baseline_crossings)
             df.loc[mask, 'turning_point'] = str(turning_point)
             df.loc[mask, 'dip'] = dip
 
-        # Write the DataFrame back to the points_of_interest.csv file
         df.to_csv('analyser/points_of_interest.csv', index=False)
 
         if verbose:
@@ -302,6 +311,8 @@ class BounceAnalyser:
 
     def find_turning_point(self, turning_pos_peaks):
         # Ensure there are enough significant peaks to select the 2nd last one
+        # was the only way to make sure we catch every turning point, since some of t_con peaks are higher and
+        # then if there is no baseline crossing it doesn't detect them
         if len(turning_pos_peaks) >= 2:
             # Sort peaks by their positions
             turning_pos_peaks = sorted(turning_pos_peaks)
@@ -369,17 +380,15 @@ class BounceAnalyser:
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
         validation_csv_path = os.path.join(validation_folder_path, 'validation_forceplate.csv')
-        # Load the validation_forceplate.csv file into a DataFrame
         if os.path.exists(validation_csv_path):
             df = pd.read_csv(validation_csv_path, dtype={'participant_id': str})
         else:
             df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force'])
 
-        # Convert 'file_name' and 'participant_id' columns to string
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
 
-        # Ensure the columns are of type string
+        # used strings since numbers didn't seem to work
         if 't_ecc' in df.columns:
             df['t_ecc'] = df['t_ecc'].astype(str)
         if 't_con' in df.columns:
@@ -389,11 +398,10 @@ class BounceAnalyser:
         if 'turning_force' in df.columns:
             df['turning_force'] = df['turning_force'].astype(str)
 
-        # Check if a row with the same file_name and participant_id already exists
+        # Duplicate check and overwrite if there is alreaedy a row with the same file_name and participant_id
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
         if df[mask].empty:
-            # If such a row does not exist, append a new row with the new data
             new_row = pd.DataFrame([{
                 'file_name': file_name,
                 'participant_id': participant_id,
@@ -410,7 +418,6 @@ class BounceAnalyser:
             df.loc[mask, 't_total'] = str(t_total)
             df.loc[mask, 'turning_force'] = str(turning_force)
 
-        # Write the DataFrame back to the validation_forceplate.csv file
         df.to_csv(validation_csv_path, index=False)
 
         if verbose:
@@ -422,39 +429,36 @@ class BounceAnalyser:
             combined = bounce_files[bounce_file_id]['combined_force'].reset_index(drop=True)
             fig, ax = plt.subplots(figsize=(20, 10))
 
-            # Plot the combined force
+            # Plot the main graph
             ax.plot(combined, label='Combined Force')
 
-            # Get the points of interest for this file
             poi = p_o_i[bounce_file_id]
 
-            # Plot the positive peaks with green circles and display their x-values
+            # plot the poi's and their x-values
             for peak in poi['pos_peaks']:
-                ax.plot(peak, combined[peak], 'go')  # 'go' specifies green circles
+                ax.plot(peak, combined[peak], 'go')
                 ax.text(peak, combined[peak], f'x={peak}, y={round(combined[peak], 1)}', fontsize=9,
                         verticalalignment='bottom')
 
-            # Plot the negative peaks with red circles and display their x-values
             for peak in poi['neg_peaks']:
-                ax.plot(peak, combined[peak], 'ro')  # 'ro' specifies red circles
+                ax.plot(peak, combined[peak], 'ro')
                 ax.text(peak, combined[peak], f'x={peak}, y={round(combined[peak], 1)}', fontsize=9,
                         verticalalignment='top')
 
-            # Plot the baseline crossings
             ax.plot(poi['baseline_crossings'], combined[poi['baseline_crossings']], '+', label='Baseline Crossings')
 
-            # Plot the turning points with blue circles
             for tp in poi['turning_points']:
-                ax.plot(tp, combined[tp], 'mo', markersize=10)  # 'bo' specifies blue circles
+                ax.plot(tp, combined[tp], 'mo', markersize=10)
                 ax.text(tp, combined[tp], f'x={tp}, y={round(combined[tp], 1)}', fontsize=9, verticalalignment='bottom')
 
-            # Ensure baseline is properly defined
+            # need to check if threshold is scalar or array since for some reason the baseline wasn't displayed
+            # correctly
             if np.isscalar(threshold):
                 baseline = np.full_like(combined, threshold)
             else:
                 baseline = threshold
 
-            # Plot filled areas without overlap
+            # Plot filled areas without overlap (looked ugly in the first iteration)
             for i in range(len(poi['baseline_crossings']) - 1):
                 start = poi['baseline_crossings'][i]
                 end = poi['baseline_crossings'][i + 1]
@@ -472,22 +476,18 @@ class BounceAnalyser:
                             turning_point = poi['turning_points'][0]
                             last_baseline_crossing = poi['baseline_crossings'][-1]
 
-                            # Plot t_ecc as a horizontal line
                             ax.hlines(y=-50, xmin=first_baseline_crossing, xmax=turning_point, colors='#B0D0D3',
                                       linestyles='dashed',
                                       label=f't_ecc: {t_ecc:.3f} s')
                             ax.text((first_baseline_crossing + turning_point) / 2, 0, f't_ecc: {t_ecc:.3f} s',
                                     ha='center',
                                     color='#B0D0D3')
-                            # Plot t_con as a horizontal line
                             ax.hlines(y=-50, xmin=turning_point, xmax=last_baseline_crossing, colors='#805D93',
                                       linestyles='dashed',
                                       label=f't_con: {t_con:.3f} s')
                             ax.text((turning_point + last_baseline_crossing) / 2, 0, f't_con: {t_con:.3f} s',
                                     ha='center',
                                     color='#805D93')
-
-                            # Plot t_total as a horizontal line
                             ax.hlines(y=-200, xmin=first_baseline_crossing, xmax=last_baseline_crossing,
                                       colors='#FF9F1C', linestyles='dashed',
                                       label=f't_total: {t_total:.3f} s')
@@ -504,7 +504,7 @@ class BounceAnalyser:
             ax.set_xlabel('Frames')
             ax.set_ylabel('Combined Force')
 
-            # For some reason, the legend is not showing up in the plot correctly, so I ask for a janky solution
+            # For some reason, the legend is not showing up in the plot correctly, so this was my janky solution
             handles, labels = ax.get_legend_handles_labels()
             by_label = dict(zip(labels, handles))
             ax.legend(by_label.values(), by_label.keys())

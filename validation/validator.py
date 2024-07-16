@@ -20,14 +20,13 @@ class Validator:
         return df_fp, df_gym
 
     def validate_data(self, df_fp, df_gym, tolerance):
-        # Merge dataframes on 'file_name' and 'participant_id'
         merged_df = pd.merge(df_fp, df_gym, on=['file_name', 'participant_id'], suffixes=('_fp', '_gym'))
 
         columns_to_compare = {
             't_ecc': 't_ecc',
             't_con': 't_con',
             't_total': 't_total',
-            'turning_force': 'F_ecc'  # Compare turning_force in fp with F_ecc in gym
+            'turning_force': 'F_ecc'
         }
 
         validation_results = []
@@ -45,12 +44,11 @@ class Validator:
                 't_total_diff': None,
                 't_total_comparison': None,
                 'turning_force_diff': None,
-                'turning_force_comparison': None  # To store comparison result
+                'turning_force_comparison': None
             }
 
             for col_fp, col_gym in columns_to_compare.items():
                 try:
-                    # Check for base column names without suffixes
                     if col_fp in row and col_gym in row:
                         fp_value = row[col_fp]
                         gym_value = row[col_gym]
@@ -58,7 +56,6 @@ class Validator:
                         if diff > tolerance * max(fp_value, gym_value):
                             result[f'{col_fp}_diff'] = round(diff, 2)
                             result[f'{col_fp}_comparison'] = 'fp_higher' if fp_value > gym_value else 'gym_higher'
-                    # Check for suffixed column names
                     elif f'{col_fp}_fp' in row and f'{col_gym}_gym' in row:
                         fp_value = row[f'{col_fp}_fp']
                         gym_value = row[f'{col_gym}_gym']
@@ -73,7 +70,6 @@ class Validator:
 
         validation_df = pd.DataFrame(validation_results)
 
-        # Filter out rows where all differences are None
         validation_df = validation_df.dropna(subset=['t_ecc_diff', 't_con_diff', 't_total_diff', 'turning_force_diff'],
                                              how='all')
 
@@ -83,21 +79,14 @@ class Validator:
         print('Validation complete. Results saved to validation/validation_results.csv')
 
     def create_excel(self, validation_df):
-        # Define the Excel file path
         excel_path = 'validation/validation_results.xlsx'
-
-        # Save the DataFrame to an Excel file
         validation_df.to_excel(excel_path, index=False)
-
-        # Load the workbook and select the active worksheet
         wb = openpyxl.load_workbook(excel_path)
         ws = wb.active
 
-        # Define fill styles for conditional formatting
         green_fill = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
         red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
 
-        # Apply conditional formatting based on specified criteria
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
             for cell in row:
                 if cell.column_letter in ['C', 'E', 'G']:  # t_ecc_diff, t_con_diff, t_total_diff
@@ -123,6 +112,5 @@ class Validator:
                     except TypeError:
                         pass
 
-        # Save the workbook
         wb.save(excel_path)
         print(f'Validation results saved to {excel_path}')
