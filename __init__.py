@@ -112,5 +112,7 @@ class BounceInsight:
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric=metric, verbose=verbose)
         elif analysis_type == 'cor':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric1=metric1, metric2=metric2, verbose=verbose)
+        elif analysis_type == 'scatter':
+            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric=metric, verbose=verbose)
         else:
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, verbose=verbose)

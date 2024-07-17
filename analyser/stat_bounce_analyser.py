@@ -3,12 +3,16 @@ import os
 from scipy import stats
 from scipy.stats import chi2_contingency
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import AnovaRM
+from statsmodels.discrete.discrete_model import Logit
+
 from .bounce_analyser import BounceAnalyser
+
 
 class StatBounceAnalyser(BounceAnalyser):
 
@@ -16,7 +20,8 @@ class StatBounceAnalyser(BounceAnalyser):
         super().__init__(metadata)
         self.metadata_table = pd.read_excel(metadata_table_path)
 
-    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, comparison_type=None, metric=None, metric1=None, metric2=None):
+    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, comparison_type=None, metric=None,
+                           metric1=None, metric2=None):
         # --- Main script for statistical analysis which uses methods from the bounce_analyser.py script ---
         p_o_i = {}
 
@@ -75,8 +80,11 @@ class StatBounceAnalyser(BounceAnalyser):
                 self.multiple_linear_regression(p_o_i, metric)
             else:
                 print("For regression analysis, please specify the dependent variable.")
-        elif analysis_type == 'cluster':
-            self.cluster_analysis(p_o_i)
+        elif analysis_type == 'scatter':
+            if metric:
+                self.scatter_plot(p_o_i, metric)
+            else:
+                print("For cluster analysis, please specify the metric.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -101,7 +109,8 @@ class StatBounceAnalyser(BounceAnalyser):
                 median = pd.Series(values).median()
                 min_val = min(values)
                 max_val = max(values)
-                print(f"{metric}; Avg: {avg:.3f}, Std Dev: {std_dev:.3f}, Median: {median:.3f}, Min: {min_val:.3f}, Max: {max_val:.3f}")
+                print(
+                    f"{metric}; Avg: {avg:.3f}, Std Dev: {std_dev:.3f}, Median: {median:.3f}, Min: {min_val:.3f}, Max: {max_val:.3f}")
             else:
                 print(f"{metric}; No data available")
 
@@ -118,6 +127,7 @@ class StatBounceAnalyser(BounceAnalyser):
         print(f"Metric: {metric}")
         print(f"Comparison Type: {comparison_type}")
 
+        # Sort into two groups based on comparison type
         for file_id, values in p_o_i.items():
             parts = file_id.split('_')
             if len(parts) >= 2:
@@ -215,7 +225,7 @@ class StatBounceAnalyser(BounceAnalyser):
         group1, group2 = comparison_dict[comparison_type]
 
         df_filtered = df[
-            (df['group'] == group1) | (df['group'] == group2)].copy()  # Use .copy() to avoid SettingWithCopyWarning
+            (df['group'] == group1) | (df['group'] == group2)].copy()
         df_filtered.loc[:, 'group'] = df_filtered['group'].astype('category')
 
         if df_filtered.empty:
@@ -351,21 +361,78 @@ class StatBounceAnalyser(BounceAnalyser):
         model = sm.OLS(y, X).fit()
         print(model.summary())
 
-    def cluster_analysis(self, p_o_i):
-        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': []}
+    def scatter_plot(self, p_o_i, metric):
+        data = []
+        print("Creating scatter plot...")
+        print(f"Metric: {metric}")
 
         for file_id, values in p_o_i.items():
-            if 't_ecc' in values and 't_con' in values and 't_total' in values and 'turning_force' in values:
+            parts = file_id.split('_')
+            if len(parts) >= 2:
+                group = parts[1].split('.')[0]
+                base_group = group[:-1]
+                if metric in values:
+                    data.append({
+                        'file_id': file_id,
+                        'group': base_group,
+                        metric: values[metric]
+                    })
+
+        if not data:
+            print("No data found to prepare scatter plot")
+            return
+
+        df = pd.DataFrame(data)
+
+        # Jitter the x-axis values
+        df['jitter'] = df['group'].apply(lambda x: hash(x) % 10 + np.random.uniform(-0.2, 0.2))
+
+        plt.figure(figsize=(12, 8))
+        sns.scatterplot(data=df, x='jitter', y=metric, hue='group', palette='viridis', s=50, alpha=0.6)
+        plt.title(f'Distribution of {metric} across Comparison Types')
+        plt.xlabel('Comparison Type')
+        plt.ylabel(metric)
+        plt.xticks(rotation=45)
+        plt.show()
+
+    def repeated_measures_anova(self, p_o_i, metric):
+        data = []
+        for file_id, values in p_o_i.items():
+            parts = file_id.split('_')
+            if len(parts) >= 2:
+                participant_id = parts[0]
+                condition = parts[1].split('.')[0]
+                if metric in values:
+                    data.append({
+                        'participant_id': participant_id,
+                        'condition': condition,
+                        metric: values[metric]
+                    })
+
+        df = pd.DataFrame(data)
+        df_wide = df.pivot(index='participant_id', columns='condition', values=metric).dropna()
+
+        aovrm = AnovaRM(df_wide.reset_index(), depvar=metric, subject='participant_id', within=['condition'])
+        res = aovrm.fit()
+        print(res)
+
+    from statsmodels.discrete.discrete_model import Logit
+
+    def logistic_regression(self, p_o_i, dependent_variable='has_dip'):
+        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': [], 'speed': [], 'weight': [], 'has_dip': []}
+        for file_id, values in p_o_i.items():
+            if all(metric in values for metric in ['t_ecc', 't_con', 't_total', 'turning_force', 'has_dip']):
                 data['t_ecc'].append(values['t_ecc'])
                 data['t_con'].append(values['t_con'])
                 data['t_total'].append(values['t_total'])
                 data['turning_force'].append(values['turning_force'])
+                data['speed'].append(1 if 'fast' in file_id else 0)
+                data['weight'].append(1 if '80' in file_id else 0)
+                data['has_dip'].append(1 if values['has_dip'] else 0)
 
         df = pd.DataFrame(data)
-        kmeans = KMeans(n_clusters=3)
-        df['cluster'] = kmeans.fit_predict(df)
-
-        plt.figure(figsize=(10, 6))
-        sns.scatterplot(data=df, x='t_ecc', y='turning_force', hue='cluster', palette='viridis')
-        plt.title('Cluster Analysis of Bounce Types')
-        plt.show()
+        X = df.drop(columns=[dependent_variable])
+        y = df[dependent_variable]
+        X = sm.add_constant(X)
+        model = Logit(y, X).fit()
+        print(model.summary())
