@@ -84,11 +84,6 @@ class StatBounceAnalyser(BounceAnalyser):
                 self.multiple_linear_regression(p_o_i, metric)
             else:
                 print("For regression analysis, please specify the dependent variable.")
-        elif analysis_type == 'scatter':
-            if metric:
-                self.scatter_plot(p_o_i, metric)
-            else:
-                print("For cluster analysis, please specify the metric.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -393,40 +388,6 @@ class StatBounceAnalyser(BounceAnalyser):
         X = sm.add_constant(X)
         model = sm.OLS(y, X).fit()
         print(model.summary())
-
-    def scatter_plot(self, p_o_i, metric):
-        data = []
-        print("Creating scatter plot...")
-        print(f"Metric: {metric}")
-
-        for file_id, values in p_o_i.items():
-            parts = file_id.split('_')
-            if len(parts) >= 2:
-                group = parts[1].split('.')[0]
-                base_group = group[:-1]
-                if metric in values:
-                    data.append({
-                        'file_id': file_id,
-                        'group': base_group,
-                        metric: values[metric]
-                    })
-
-        if not data:
-            print("No data found to prepare scatter plot")
-            return
-
-        df = pd.DataFrame(data)
-
-        # Jitter the x-axis values
-        df['jitter'] = df['group'].apply(lambda x: hash(x) % 10 + np.random.uniform(-0.2, 0.2))
-
-        plt.figure(figsize=(12, 8))
-        sns.scatterplot(data=df, x='jitter', y=metric, hue='group', palette='viridis', s=50, alpha=0.6)
-        plt.title(f'Distribution of {metric} across Comparison Types')
-        plt.xlabel('Comparison Type')
-        plt.ylabel(metric)
-        plt.xticks(rotation=45)
-        plt.show()
 
     def repeated_measures_anova(self, p_o_i, metric):
         data = []
