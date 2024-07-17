@@ -1,0 +1,21 @@
+- Significant higher t_ecc for the fp_data is the result of segmenting the fp_data too generous (i.e. too much data is included in the analysis)
+    - This is the case for (eventually new segmentation):
+        - 10_slowb1
+        - 24_slownb1
+        - 38_slowb1
+
+
+
+- Wrong baseline crossings or non-existent baseline crossings which causes wrong t_ecc values:
+    - 12_slowb2
+    - 12_slowb3
+    - 12_slownb1
+    - 12_slownb2
+    - 12_slownb3
+    - 38_slownb2
+    - 38_slownb3
+
+
+
+
+

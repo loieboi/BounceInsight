@@ -96,22 +96,22 @@ class Validator:
                 if cell.column_letter in ['C', 'E', 'G']:  # t_ecc_diff, t_con_diff, t_total_diff
                     try:
                         if cell.value is not None:
-                            if (cell.column_letter == 'C' or cell.column_letter == 'E') and cell.value < 0.25:
+                            if (cell.column_letter == 'C' or cell.column_letter == 'E') and cell.value < 1:
                                 cell.fill = green_fill
-                            elif (cell.column_letter == 'C' or cell.column_letter == 'E') and cell.value > 0.25:
+                            elif (cell.column_letter == 'C' or cell.column_letter == 'E') and cell.value > 1:
                                 cell.fill = red_fill
-                            elif cell.column_letter == 'G' and cell.value < 0.5:
+                            elif cell.column_letter == 'G' and cell.value < 1.25:
                                 cell.fill = green_fill
-                            elif cell.column_letter == 'G' and cell.value > 0.5:
+                            elif cell.column_letter == 'G' and cell.value > 1.25:
                                 cell.fill = red_fill
                     except TypeError:
                         pass
-                elif cell.column_letter == ['I', 'K']:  # turning_force_diff and t_con_force_diff
+                elif cell.column_letter in ['I', 'K']:  # turning_force_diff and t_con_force_diff
                     try:
                         if cell.value is not None:
-                            if cell.value < 200:
+                            if cell.value < 1000:
                                 cell.fill = green_fill
-                            elif cell.value > 200:
+                            elif cell.value > 1000:
                                 cell.fill = red_fill
                     except TypeError:
                         pass

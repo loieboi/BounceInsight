@@ -86,6 +86,9 @@ class StatBounceAnalyser(BounceAnalyser):
                 print("For regression analysis, please specify the dependent variable.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
+# TODO: - Add more statistical methods as needed (some are ready to go and just need implementation in the statement
+#      above)
+#       - Document the methods and their outputs --> make sense of them and look into their meaning
 
     def summary_statistics_by_type(self, p_o_i, bounce_type):
         filtered_poi = {k: v for k, v in p_o_i.items() if bounce_type in k}
