@@ -2,14 +2,14 @@ import pandas as pd
 import numpy as np
 import os
 from scipy import stats
-from scipy.stats import chi2_contingency
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
+from scipy.stats import chi2_contingency, kruskal, levene
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import AnovaRM
+from statsmodels.stats.oneway import anova_oneway
 from statsmodels.discrete.discrete_model import Logit
 
 from .bounce_analyser import BounceAnalyser
@@ -21,7 +21,7 @@ class StatBounceAnalyser(BounceAnalyser):
         super().__init__(metadata)
         self.metadata_table = pd.read_excel(metadata_table_path)
 
-    def analyze_statistics(self, edited_bounce_files, analysis_type, verbose=False, comparison_type=None, metric=None,
+    def analyze_statistics(self, edited_bounce_files, analysis_type, comparison_type=None, metric=None,
                            metric1=None, metric2=None):
         # --- Main script for statistical analysis which uses methods from the bounce_analyser.py script ---
         p_o_i = {}
@@ -30,11 +30,11 @@ class StatBounceAnalyser(BounceAnalyser):
             file_name, file_ext = os.path.splitext(bounce_file_id)
             participant_id = bounce_file_id.split('_')[0]
 
-            self.update_metadata(self.metadata_table, participant_id, file_name, verbose=verbose)
+            self.update_metadata(self.metadata_table, participant_id, file_name)
             bounce_files = self.clean_edited_bounce_files(edited_bounce_files, bounce_file_id)
 
             baseline = (self.metadata['bodyweight'] + self.metadata['load']) * 9.81
-            self.search_poi(bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name, verbose=verbose)
+            self.search_poi(bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name)
 
             if p_o_i[bounce_file_id]['turning_points']:
                 t_ecc = self.calculate_t_ecc(p_o_i, bounce_file_id)
@@ -42,6 +42,8 @@ class StatBounceAnalyser(BounceAnalyser):
                 t_total = self.calculate_t_total(p_o_i, bounce_file_id)
                 turning_force = self.calculate_turning_force(p_o_i, bounce_file_id,
                                                              bounce_files[bounce_file_id]['combined_force'])
+                t_con_force = self.find_t_con_force(p_o_i, bounce_file_id,
+                                                    bounce_files[bounce_file_id]['combined_force'])
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
 
                 # Update p_o_i with calculated values
@@ -50,6 +52,7 @@ class StatBounceAnalyser(BounceAnalyser):
                 p_o_i[bounce_file_id]['t_total'] = t_total
                 p_o_i[bounce_file_id]['turning_force'] = turning_force
                 p_o_i[bounce_file_id]['has_dip'] = has_dip
+                p_o_i[bounce_file_id]['t_con_force'] = t_con_force
             else:
                 continue
 
@@ -120,13 +123,21 @@ class StatBounceAnalyser(BounceAnalyser):
         metric2_values = [data[metric2] for data in p_o_i.values() if metric2 in data and data[metric2] is not None]
 
         correlation, p_val = stats.pearsonr(metric1_values, metric2_values)
-        print(f"Correlation between {metric1} and {metric2}: correlation = {correlation:.3f}, p-value = {p_val:.3f}")
+        # print(f"Correlation between {metric1} and {metric2}: correlation = {correlation:.3f}, p-value = {p_val:.3f}")
+
+        # Plotting
+        df = pd.DataFrame({metric1: metric1_values, metric2: metric2_values})
+        plt.figure(figsize=(10, 6))
+        sns.regplot(x=metric1, y=metric2, data=df, ci=None, scatter_kws={"s": 50, "alpha": 0.5})
+        plt.title(f'Scatter plot of {metric1} vs {metric2}\nCorrelation: {correlation:.3f}, p-value: {p_val:.3f}')
+        plt.xlabel(metric1)
+        plt.ylabel(metric2)
+        plt.grid(True)
+        plt.show()
 
     def calculate_anova(self, p_o_i, metric, comparison_type):
         data = []
-        print("Starting ANOVA calculation...")
-        print(f"Metric: {metric}")
-        print(f"Comparison Type: {comparison_type}")
+        print("----------------------------------------------------")
 
         # Sort into two groups based on comparison type
         for file_id, values in p_o_i.items():
@@ -227,7 +238,7 @@ class StatBounceAnalyser(BounceAnalyser):
 
         df_filtered = df[
             (df['group'] == group1) | (df['group'] == group2)].copy()
-        df_filtered.loc[:, 'group'] = df_filtered['group'].astype('category')
+        df_filtered['group'] = df_filtered['group'].astype('category')
 
         if df_filtered.empty:
             print(f"No data available for comparison between {group1} and {group2}")
@@ -237,17 +248,38 @@ class StatBounceAnalyser(BounceAnalyser):
             print(f"Metric {metric} not found in data")
             return
 
-        model = ols(f'{metric} ~ C(group)', data=df_filtered).fit()
-        anova_table = sm.stats.anova_lm(model, typ=2)
+        # Check assumptions
+        homogeneity_passed = self.check_anova_assumptions(df_filtered, metric)
 
-        print(f'ANOVA results for {metric} comparing {group1} and {group2}:')
-        print(anova_table)
+        if homogeneity_passed:
+            # Perform standard ANOVA
+            model = ols(f'{metric} ~ C(group)', data=df_filtered).fit()
+            anova_table = sm.stats.anova_lm(model, typ=2)
+            print(f'ANOVA results for {metric} comparing {group1} and {group2}:')
+            print(anova_table)
+        else:
+            # Perform Welch's ANOVA
+            anova_table = anova_oneway(df_filtered[metric], df_filtered['group'], use_var="unequal")
+            print(f'Welch\'s ANOVA results for {metric} comparing {group1} and {group2}:')
+            print(f"{'Statistic':<15}: {anova_table.statistic:.4f} {'':<15} {'p-value':<15}: {anova_table.pvalue:.4e}")
 
         # Plotting
         plt.figure(figsize=(10, 6))
         sns.boxplot(x='group', y=metric, data=df_filtered)
         plt.title(f'{metric} comparison between {group1} and {group2}')
         plt.show()
+
+    def check_anova_assumptions(self, df, metric):
+        # Levene's test for homogeneity of variances
+        group_categories = df['group'].cat.categories
+        w, p_value_homogeneity = levene(df[df['group'] == group_categories[0]][metric],
+                                        df[df['group'] == group_categories[1]][metric])
+        print(f"Levene's test for homogeneity of variances: W={w:.3f}, p-value={p_value_homogeneity:.3f}")
+        if p_value_homogeneity < 0.05:
+            print("Homogeneity of variances assumption not met, using Welch's ANOVA")
+        homogeneity_passed = p_value_homogeneity >= 0.05
+
+        return homogeneity_passed
 
     def calculate_contingency_table(self, p_o_i, comparison_type):  # used only to look at dips
         data = {'group': [], 'has_dip': []}

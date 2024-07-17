@@ -26,7 +26,8 @@ class Validator:
             't_ecc': 't_ecc',
             't_con': 't_con',
             't_total': 't_total',
-            'turning_force': 'F_ecc'
+            'turning_force': 'F_ecc',
+            't_con_force': 'F_con'
         }
 
         validation_results = []
@@ -44,7 +45,9 @@ class Validator:
                 't_total_diff': None,
                 't_total_comparison': None,
                 'turning_force_diff': None,
-                'turning_force_comparison': None
+                'turning_force_comparison': None,
+                't_con_force_diff': None,
+                't_con_force_comparison': None
             }
 
             for col_fp, col_gym in columns_to_compare.items():
@@ -103,7 +106,7 @@ class Validator:
                                 cell.fill = red_fill
                     except TypeError:
                         pass
-                elif cell.column_letter == 'I':  # turning_force_diff
+                elif cell.column_letter == ['I', 'K']:  # turning_force_diff and t_con_force_diff
                     try:
                         if cell.value is not None:
                             if cell.value < 200:
