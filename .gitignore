@@ -2,4 +2,6 @@
 /.idea
 /__pychache__
 /files/sens
-/run.ipynb
+
+
+*.ipynb
