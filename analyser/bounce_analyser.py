@@ -56,7 +56,7 @@ class BounceAnalyser:
                 t_total = self.calculate_t_total(p_o_i, bounce_file_id)
                 turning_force = self.calculate_turning_force(p_o_i, bounce_file_id,
                                                              bounce_files[bounce_file_id]['combined_force'])
-                t_con_force = self.find_t_con_force(p_o_i, bounce_file_id,
+                con_force = self.find_con_force(p_o_i, bounce_file_id,
                                                     bounce_files[bounce_file_id]['combined_force'])
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
 
@@ -73,12 +73,12 @@ class BounceAnalyser:
                 t_total = None
                 turning_force = None
                 has_dip = False
-                t_con_force = None
+                con_force = None
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
             # --- Plot Points of Interest in the correct graph (index is zeroed, so not applicable to raw files,
             # but in poi.csv the values are correct) ---
-            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, t_con_force, plot=plot,verbose=verbose)
+            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, con_force, plot=plot,verbose=verbose)
 
             # --- Update CSV File with points of interests ---
             self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
@@ -87,7 +87,7 @@ class BounceAnalyser:
                                 verbose=verbose)
 
             # --- Update CSV File with validation data for validator.py file ---
-            self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, t_con_force, verbose=verbose)
+            self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, verbose=verbose)
 
             # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
@@ -373,7 +373,7 @@ class BounceAnalyser:
 
         return has_dip
 
-    def find_t_con_force(self, p_o_i, bounce_file_id, combined_force):
+    def find_con_force(self, p_o_i, bounce_file_id, combined_force):
         poi = p_o_i[bounce_file_id]
         last_baseline_crossing = poi['baseline_crossings'][-1]
 
@@ -382,21 +382,21 @@ class BounceAnalyser:
         pos_peaks_before_last_crossing.sort()
         if pos_peaks_before_last_crossing:
             # Select the last positive peak before the last baseline crossing
-            t_con_force_peak = pos_peaks_before_last_crossing[-1]
-            t_con_force = combined_force.iloc[t_con_force_peak]
+            con_force_peak = pos_peaks_before_last_crossing[-1]
+            con_force = combined_force.iloc[con_force_peak]
         else:
-            t_con_force = None
+            con_force = None
 
-        return t_con_force
+        return con_force
 
-    def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, t_con_force, verbose=False):
+    def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
         validation_csv_path = os.path.join(validation_folder_path, 'validation_forceplate.csv')
         if os.path.exists(validation_csv_path):
             df = pd.read_csv(validation_csv_path, dtype={'participant_id': str})
         else:
-            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force', 't_con_force'])
+            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force', 'con_force'])
 
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
@@ -410,8 +410,8 @@ class BounceAnalyser:
             df['t_total'] = df['t_total'].astype(str)
         if 'turning_force' in df.columns:
             df['turning_force'] = df['turning_force'].astype(str)
-        if 't_con_force' in df.columns:
-            df['t_con_force'] = df['t_con_force'].astype(str)
+        if 'con_force' in df.columns:
+            df['con_force'] = df['con_force'].astype(str)
 
         # Duplicate check and overwrite if there is already a row with the same file_name and participant_id
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
@@ -424,7 +424,7 @@ class BounceAnalyser:
                 't_con': str(t_con),
                 't_total': str(t_total),
                 'turning_force': str(turning_force),
-                't_con_force': str(t_con_force)
+                'con_force': str(con_force)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
@@ -433,7 +433,7 @@ class BounceAnalyser:
             df.loc[mask, 't_con'] = str(t_con)
             df.loc[mask, 't_total'] = str(t_total)
             df.loc[mask, 'turning_force'] = str(turning_force)
-            df.loc[mask, 't_con_force'] = str(t_con_force)
+            df.loc[mask, 'con_force'] = str(con_force)
 
         df.to_csv(validation_csv_path, index=False)
 
@@ -441,7 +441,7 @@ class BounceAnalyser:
             print("Updated DataFrame:")
             print(df)
 
-    def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, t_ecc, t_con, t_total, t_con_force, plot=False, verbose=False):
+    def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, t_ecc, t_con, t_total, con_force, plot=False, verbose=False):
         if plot:
             combined = bounce_files[bounce_file_id]['combined_force'].reset_index(drop=True)
             fig, ax = plt.subplots(figsize=(20, 10))
@@ -475,7 +475,7 @@ class BounceAnalyser:
             else:
                 baseline = threshold
 
-            if t_con_force is not None:
+            if con_force is not None:
                 last_baseline_crossing = poi['baseline_crossings'][-1]
                 pos_peaks_before_last_crossing = [peak for peak in poi['pos_peaks'] if peak < last_baseline_crossing]
                 pos_peaks_before_last_crossing.sort()

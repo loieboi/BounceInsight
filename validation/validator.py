@@ -27,7 +27,7 @@ class Validator:
             't_con': 't_con',
             't_total': 't_total',
             'turning_force': 'F_ecc',
-            't_con_force': 'F_con'
+            'con_force': 'F_con'
         }
 
         validation_results = []
@@ -46,8 +46,8 @@ class Validator:
                 't_total_comparison': None,
                 'turning_force_diff': None,
                 'turning_force_comparison': None,
-                't_con_force_diff': None,
-                't_con_force_comparison': None
+                'con_force_diff': None,
+                'con_force_comparison': None
             }
 
             for col_fp, col_gym in columns_to_compare.items():
@@ -106,7 +106,7 @@ class Validator:
                                 cell.fill = red_fill
                     except TypeError:
                         pass
-                elif cell.column_letter in ['I', 'K']:  # turning_force_diff and t_con_force_diff --> not that important
+                elif cell.column_letter in ['I', 'K']:  # turning_force_diff and con_force_diff --> not that important
                     try:
                         if cell.value is not None:
                             if cell.value < 750:

@@ -42,7 +42,7 @@ class StatBounceAnalyser(BounceAnalyser):
                 t_total = self.calculate_t_total(p_o_i, bounce_file_id)
                 turning_force = self.calculate_turning_force(p_o_i, bounce_file_id,
                                                              bounce_files[bounce_file_id]['combined_force'])
-                t_con_force = self.find_t_con_force(p_o_i, bounce_file_id,
+                con_force = self.find_con_force(p_o_i, bounce_file_id,
                                                     bounce_files[bounce_file_id]['combined_force'])
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
 
@@ -52,7 +52,7 @@ class StatBounceAnalyser(BounceAnalyser):
                 p_o_i[bounce_file_id]['t_total'] = t_total
                 p_o_i[bounce_file_id]['turning_force'] = turning_force
                 p_o_i[bounce_file_id]['has_dip'] = has_dip
-                p_o_i[bounce_file_id]['t_con_force'] = t_con_force
+                p_o_i[bounce_file_id]['con_force'] = con_force
             else:
                 continue
 
@@ -368,15 +368,15 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.show()
 
     def multiple_linear_regression(self, p_o_i, dependent_variable):
-        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': [], 'speed': [], 'weight': [], 'has_dip': [], 't_con_force': []}
+        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': [], 'speed': [], 'weight': [], 'has_dip': [], 'con_force': []}
 
         for file_id, values in p_o_i.items():
-            if all(metric in values for metric in ['t_ecc', 't_con', 't_total', 'turning_force', 'has_dip', 't_con_force']):
+            if all(metric in values for metric in ['t_ecc', 't_con', 't_total', 'turning_force', 'has_dip', 'con_force']):
                 data['t_ecc'].append(values['t_ecc'])
                 data['t_con'].append(values['t_con'])
                 data['t_total'].append(values['t_total'])
                 data['turning_force'].append(values['turning_force'])
-                data['t_con_force'].append(values['t_con_force'])
+                data['con_force'].append(values['con_force'])
                 data['speed'].append(1 if 'fast' and 'slow' in file_id else 0)
                 data['weight'].append(1 if '80' and '70' in file_id else 0)
                 data['has_dip'].append(1 if values['has_dip'] else 0)
