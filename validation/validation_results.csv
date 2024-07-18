@@ -1,4 +1,4 @@
-file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison,t_total_diff,t_total_comparison,turning_force_diff,turning_force_comparison,t_con_force_diff,t_con_force_comparison
+file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison,t_total_diff,t_total_comparison,turning_force_diff,turning_force_comparison,con_force_diff,con_force_comparison
 00_bounce70b3,00,0.9,gym_higher,0.46,gym_higher,1.39,gym_higher,601.07,fp_higher,,
 02_bounce70b1,02,0.29,fp_higher,,,,,,,675.74,gym_higher
 02_bounce70b2,02,0.27,fp_higher,,,,,,,,

@@ -1,4 +1,4 @@
-file_name,participant_id,t_ecc,t_con,t_total,turning_force,t_con_force
+file_name,participant_id,t_ecc,t_con,t_total,turning_force,con_force
 00_bounce70b1,00,1.016,0.804,1.82,2694.9266501336688,2171.9159515163174
 00_bounce70b2,00,1.053,0.814,1.867,2628.0482895386085,2253.0948781672814
 00_bounce70b3,00,1.03,0.774,1.804,2630.7410432702045,2252.5263671295606

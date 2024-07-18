@@ -1,6 +1,8 @@
 import pandas as pd
 import openpyxl
 from openpyxl.styles import PatternFill
+import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
 import numpy as np
 import os
 
@@ -13,6 +15,8 @@ class Validator:
     def validate(self, tolerance=0.05):
         df_fp, df_gym = self.load_validator_files()
         self.validate_data(df_fp, df_gym, tolerance=tolerance)
+        self.plot_bland_altman(df_fp, df_gym)
+        self.calculate_correlations(df_fp, df_gym)
 
     def load_validator_files(self):
         df_fp = pd.read_csv('validation/validation_forceplate.csv', dtype={'participant_id': str})
@@ -118,3 +122,102 @@ class Validator:
 
         wb.save(excel_path)
         print(f'Visualized validation results saved to {excel_path}')
+
+    def plot_bland_altman(self, df_fp, df_gym):
+        # Merge the dataframes on 'file_name' and 'participant_id'
+        merged_df = pd.merge(df_fp, df_gym, on=['file_name', 'participant_id'], suffixes=('_fp', '_gym'))
+
+        # Comparisons for time measurements
+        time_comparisons = [
+            ('t_ecc_fp', 't_ecc_gym', 't_ecc'),
+            ('t_con_fp', 't_con_gym', 't_con'),
+            ('t_total_fp', 't_total_gym', 't_total')
+        ]
+
+        # Comparisons for force measurements
+        force_comparisons = [
+            ('turning_force', 'F_ecc', 'turning_force'),
+            ('con_force', 'F_con', 'con_force')
+        ]
+
+        # Create Bland-Altman plot for time measurements
+        self._bland_altman_plot(merged_df, time_comparisons, "Bland-Altman Plot for Time Measurements")
+
+        # Create Bland-Altman plot for force measurements
+        self._bland_altman_plot(merged_df, force_comparisons, "Bland-Altman Plot for Force Measurements")
+
+    def _bland_altman_plot(self, df, comparisons, title):
+        plt.figure(figsize=(12, 8))
+
+        # Define different colors for each comparison
+        colors = ['blue', 'green', 'red', 'purple', 'orange']
+
+        overall_diffs = []
+
+        for i, (col1, col2, label) in enumerate(comparisons):
+            mean = (df[col1] + df[col2]) / 2
+            diff = df[col1] - df[col2]
+            overall_diffs.extend(diff.dropna())  # Ensure no NaN values are included
+            plt.scatter(mean, diff, alpha=0.5, label=label, color=colors[i % len(colors)])
+
+        # Calculate overall mean difference and standard deviation
+        if overall_diffs:
+            overall_diffs = np.array(overall_diffs)
+            mean_diff = np.mean(overall_diffs)
+            std_diff = np.std(overall_diffs)
+
+            # Plot overall mean difference and limits of agreement
+            plt.axhline(mean_diff, color='gray', linestyle='--', label='Mean Difference')
+            plt.axhline(mean_diff + 1.96 * std_diff, color='red', linestyle='--', label='Limits of Agreement')
+            plt.axhline(mean_diff - 1.96 * std_diff, color='red', linestyle='--')
+
+            # Evaluate the points within and outside the limits of agreement
+            lower_limit = mean_diff - 1.96 * std_diff
+            upper_limit = mean_diff + 1.96 * std_diff
+
+            outside_limits = np.sum((overall_diffs < lower_limit) | (overall_diffs > upper_limit))
+            within_limits = np.sum((overall_diffs >= lower_limit) & (overall_diffs <= upper_limit))
+
+            total_points = len(overall_diffs)
+            print(f"Total points: {total_points}")
+            print(f"Points within limits: {within_limits} ({within_limits / total_points * 100:.2f}%)")
+            print(f"Points outside limits: {outside_limits} ({outside_limits / total_points * 100:.2f}%)")
+
+            # Determine if the data is good or not
+            if within_limits / total_points > 0.95:
+                print("The data is good (more than 95% points within limits of agreement).")
+            else:
+                print("The data is not good (less than 95% points within limits of agreement).")
+
+        plt.title(title)
+        plt.xlabel('Mean of Two Measurements')
+        plt.ylabel('Difference between Two Measurements')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    def calculate_correlations(self, df_fp, df_gym):
+        merged_df = pd.merge(df_fp, df_gym, on=['file_name', 'participant_id'], suffixes=('_fp', '_gym'))
+        comparisons = [
+            ('t_ecc_fp', 't_ecc_gym', 't_ecc'),
+            ('t_con_fp', 't_con_gym', 't_con'),
+            ('t_total_fp', 't_total_gym', 't_total'),
+            ('turning_force', 'F_ecc', 'turning_force'),
+            ('con_force', 'F_con', 'con_force')
+        ]
+        for col1, col2, label in comparisons:
+            valid_data = merged_df[[col1, col2]].dropna()
+            correlation, p_value = pearsonr(valid_data[col1], valid_data[col2])
+            if p_value < 0.001:
+                p_str = "< 0.001"
+            elif p_value < 0.005:
+                p_str = "< 0.005"
+            elif p_value < 0.05:
+                p_str = "< 0.05"
+            else:
+                p_str = f"= {p_value:.3f}"
+            print(f"Correlation for {label}: {correlation:.2f}, p-value {p_str}")
+
+
+
+
