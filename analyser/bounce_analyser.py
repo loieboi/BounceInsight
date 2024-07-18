@@ -379,7 +379,7 @@ class BounceAnalyser:
 
         # Find all positive peaks before the last baseline crossing
         pos_peaks_before_last_crossing = [peak for peak in poi['pos_peaks'] if peak < last_baseline_crossing]
-        # FIXME: Detection logic isn't 100% robust, check again in cases where fails and adjust
+        pos_peaks_before_last_crossing.sort()
         if pos_peaks_before_last_crossing:
             # Select the last positive peak before the last baseline crossing
             t_con_force_peak = pos_peaks_before_last_crossing[-1]
@@ -477,8 +477,9 @@ class BounceAnalyser:
 
             if t_con_force is not None:
                 last_baseline_crossing = poi['baseline_crossings'][-1]
-                last_pos_peak_before_last_crossing = \
-                    [peak for peak in poi['pos_peaks'] if peak < last_baseline_crossing][-1]
+                pos_peaks_before_last_crossing = [peak for peak in poi['pos_peaks'] if peak < last_baseline_crossing]
+                pos_peaks_before_last_crossing.sort()
+                last_pos_peak_before_last_crossing = pos_peaks_before_last_crossing[-1]
                 ax.plot(last_pos_peak_before_last_crossing, combined[last_pos_peak_before_last_crossing], 'bo',
                         markersize=10)
 

@@ -3,7 +3,7 @@ file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison
 02_bounce70b1,02,0.29,fp_higher,,,,,,,675.74,gym_higher
 02_bounce70b2,02,0.27,fp_higher,,,,,,,,
 02_bounce80nb1,02,0.4,fp_higher,,,,,,,,
-02_slownb1,02,0.48,fp_higher,0.3,gym_higher,,,,,444.2,gym_higher
+02_slownb1,02,0.48,fp_higher,0.3,gym_higher,,,,,,
 09_bounce70b1,09,,,0.2,gym_higher,,,,,,
 09_bounce70nb1,09,,,0.29,gym_higher,,,,,,
 09_bounce70nb2,09,,,0.2,gym_higher,,,,,,
@@ -31,7 +31,7 @@ file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison
 12_slownb2,12,2.36,gym_higher,,,2.58,gym_higher,,,,
 12_slownb3,12,2.65,gym_higher,,,2.84,gym_higher,,,,
 14_bounce70b1,14,,,0.5,gym_higher,0.51,gym_higher,,,,
-14_bounce70b4,14,,,0.21,gym_higher,,,,,522.31,gym_higher
+14_bounce70b4,14,,,0.21,gym_higher,,,,,,
 14_bounce80b3,14,0.26,gym_higher,,,,,,,,
 14_fastb1,14,0.23,fp_higher,,,,,,,,
 14_fastb3,14,0.22,fp_higher,,,,,,,613.61,gym_higher
@@ -51,7 +51,7 @@ file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison
 24_fastnb1,24,0.46,fp_higher,,,,,,,,
 24_fastnb3,24,,,0.23,gym_higher,,,,,,
 24_fastnb4,24,,,0.22,gym_higher,,,,,,
-24_slowb1,24,,,0.31,gym_higher,,,2098.51,gym_higher,907.65,gym_higher
+24_slowb1,24,,,0.31,gym_higher,,,2098.51,gym_higher,875.59,gym_higher
 24_slownb1,24,1.68,fp_higher,0.23,gym_higher,1.34,fp_higher,,,,
 24_slownb2,24,1.6,fp_higher,0.27,gym_higher,1.26,fp_higher,,,,
 26_bounce70b2,26,,,0.22,gym_higher,,,,,,
@@ -60,13 +60,13 @@ file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison
 26_bounce70nb2,26,,,0.23,gym_higher,,,,,,
 26_bounce70nb3,26,0.68,fp_higher,0.23,gym_higher,,,790.48,gym_higher,986.17,gym_higher
 26_bounce80b1,26,,,0.32,gym_higher,,,,,,
-26_bounce80b3,26,0.34,gym_higher,0.37,gym_higher,0.77,gym_higher,871.26,fp_higher,660.51,gym_higher
-26_bounce80nb3,26,,,0.38,fp_higher,2.0,gym_higher,,,,
+26_bounce80b3,26,0.34,gym_higher,0.37,gym_higher,0.77,gym_higher,871.26,fp_higher,,
+26_bounce80nb3,26,,,0.38,fp_higher,2.0,gym_higher,,,633.84,fp_higher
 28_bounce70nb1,28,,,0.37,gym_higher,,,,,,
 28_bounce70nb2,28,,,0.24,gym_higher,,,,,,
 28_bounce80nb3,28,0.41,fp_higher,,,,,,,,
 29_bounce80b1,29,0.27,fp_higher,,,,,,,,
-29_bounce80b2,29,0.43,fp_higher,,,,,,,423.92,gym_higher
+29_bounce80b2,29,0.43,fp_higher,,,,,,,,
 29_bounce80nb1,29,0.7,gym_higher,,,0.89,gym_higher,,,,
 29_fastnb2,29,0.18,gym_higher,,,,,,,,
 29_fastnb3,29,0.23,gym_higher,,,,,,,,
@@ -82,7 +82,7 @@ file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison
 38_slownb2,38,3.07,gym_higher,3.11,fp_higher,,,,,,
 38_slownb3,38,1.27,fp_higher,,,,,,,,
 39_bounce70nb2,39,,,0.26,gym_higher,,,,,,
-39_fastnb1,39,,,0.23,gym_higher,,,,,672.37,gym_higher
+39_fastnb1,39,,,0.23,gym_higher,,,,,,
 39_slowb3,39,0.84,fp_higher,,,,,,,,
 40_bounce70nb1,40,,,0.18,gym_higher,,,,,,
 40_bounce70nb2,40,,,0.22,gym_higher,,,,,835.33,gym_higher
