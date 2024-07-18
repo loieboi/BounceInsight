@@ -84,11 +84,13 @@ class StatBounceAnalyser(BounceAnalyser):
                 self.multiple_linear_regression(p_o_i, metric)
             else:
                 print("For regression analysis, please specify the dependent variable.")
+        elif analysis_type == 'repeated_anova':
+            if metric:
+                self.repeated_measures_anova(p_o_i, metric)
+            else:
+                print("For repeated measures ANOVA, please specify the metric.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
-# TODO: - Add more statistical methods as needed (some are ready to go and just need implementation in the statement
-#      above)
-#       - Document the methods and their outputs --> make sense of them and look into their meaning
 
     def summary_statistics_by_type(self, p_o_i, bounce_type):
         filtered_poi = {k: v for k, v in p_o_i.items() if bounce_type in k}
@@ -366,14 +368,15 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.show()
 
     def multiple_linear_regression(self, p_o_i, dependent_variable):
-        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': [], 'speed': [], 'weight': [], 'has_dip': []}
+        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': [], 'speed': [], 'weight': [], 'has_dip': [], 't_con_force': []}
 
         for file_id, values in p_o_i.items():
-            if all(metric in values for metric in ['t_ecc', 't_con', 't_total', 'turning_force', 'has_dip']):
+            if all(metric in values for metric in ['t_ecc', 't_con', 't_total', 'turning_force', 'has_dip', 't_con_force']):
                 data['t_ecc'].append(values['t_ecc'])
                 data['t_con'].append(values['t_con'])
                 data['t_total'].append(values['t_total'])
                 data['turning_force'].append(values['turning_force'])
+                data['t_con_force'].append(values['t_con_force'])
                 data['speed'].append(1 if 'fast' and 'slow' in file_id else 0)
                 data['weight'].append(1 if '80' and '70' in file_id else 0)
                 data['has_dip'].append(1 if values['has_dip'] else 0)
@@ -399,37 +402,34 @@ class StatBounceAnalyser(BounceAnalyser):
             if len(parts) >= 2:
                 participant_id = parts[0]
                 condition = parts[1].split('.')[0]
+                # Aggregate conditions by removing specific instance numbers
+                aggregated_condition = ''.join([i for i in condition if not i.isdigit()])
                 if metric in values:
                     data.append({
                         'participant_id': participant_id,
-                        'condition': condition,
+                        'condition': aggregated_condition,
                         metric: values[metric]
                     })
 
         df = pd.DataFrame(data)
-        df_wide = df.pivot(index='participant_id', columns='condition', values=metric).dropna()
+        if df.empty:
+            print(f"No data found for metric {metric}")
+            return
 
-        aovrm = AnovaRM(df_wide.reset_index(), depvar=metric, subject='participant_id', within=['condition'])
+        # Group by participant_id and condition and average the metric values
+        df_grouped = df.groupby(['participant_id', 'condition'], as_index=False).mean()
+
+        # Pivot the DataFrame to have conditions as columns
+        df_wide = df_grouped.pivot(index='participant_id', columns='condition', values=metric).dropna()
+
+        if df_wide.empty:
+            print(f"No data available for repeated measures ANOVA on {metric}")
+            return
+
+        # Melt the DataFrame back to long form for AnovaRM
+        df_long = df_wide.reset_index().melt(id_vars=['participant_id'], var_name='condition', value_name=metric)
+
+        aovrm = AnovaRM(df_long, depvar=metric, subject='participant_id', within=['condition'])
         res = aovrm.fit()
+        print(f"Repeated Measures ANOVA for {metric}:")
         print(res)
-
-    from statsmodels.discrete.discrete_model import Logit
-
-    def logistic_regression(self, p_o_i, dependent_variable='has_dip'):
-        data = {'t_ecc': [], 't_con': [], 't_total': [], 'turning_force': [], 'speed': [], 'weight': [], 'has_dip': []}
-        for file_id, values in p_o_i.items():
-            if all(metric in values for metric in ['t_ecc', 't_con', 't_total', 'turning_force', 'has_dip']):
-                data['t_ecc'].append(values['t_ecc'])
-                data['t_con'].append(values['t_con'])
-                data['t_total'].append(values['t_total'])
-                data['turning_force'].append(values['turning_force'])
-                data['speed'].append(1 if 'fast' in file_id else 0)
-                data['weight'].append(1 if '80' in file_id else 0)
-                data['has_dip'].append(1 if values['has_dip'] else 0)
-
-        df = pd.DataFrame(data)
-        X = df.drop(columns=[dependent_variable])
-        y = df[dependent_variable]
-        X = sm.add_constant(X)
-        model = Logit(y, X).fit()
-        print(model.summary())

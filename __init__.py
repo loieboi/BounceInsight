@@ -108,7 +108,7 @@ class BounceInsight:
                                              metric=metric, comparison_type=comparison_type)
         elif analysis_type == 'chi2':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, comparison_type=comparison_type)
-        elif analysis_type == 'regression':
+        elif analysis_type == 'regression' or analysis_type == 'repeated_anova':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric=metric)
         elif analysis_type == 'cor':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric1=metric1, metric2=metric2)
