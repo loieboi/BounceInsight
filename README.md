@@ -100,11 +100,11 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
 - [ ] Add gender differentiation to metadata file and use it for analysis
 - [ ] **Validation of Forceplate data with Gymaware data**
   - [x] Read t_ecc, t_con, t_total, F_ecc and F_con from the Gymaware data
-  - [X] Compare Gymdata with Forceplate data and save to CSV and Excel file
-  - [ ] Bland–Altman plot for comparing Gymaware and Forceplate data
-  - [ ] Display Correlation of Validation Data
-  - [ ] Limit of Agreements --> especially time, if data is usable
-  - [ ] Edit Gymaware data to match Forceplate data in case needed
+  - [x] Compare Gymdata with Forceplate data and save to CSV and Excel file
+  - [x] Bland–Altman plot for comparing Gymaware and Forceplate data
+  - [x] Display Correlation of Validation Data
+  - [x] Limit of Agreements --> especially time, if data is usable
+  - [ ] ~~Edit Gymaware data to match Forceplate data in case needed~~
 - [ ] **Implement ability to calculate Force relative to Bodyweight**
 - [ ] **Statistical Analysis:**
   - [ ] Statistical Analysis similar to the one in the paper
