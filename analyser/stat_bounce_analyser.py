@@ -26,6 +26,11 @@ class StatBounceAnalyser(BounceAnalyser):
         # --- Main script for statistical analysis which uses methods from the bounce_analyser.py script ---
         p_o_i = {}
 
+        # --- Import Metadata Table ---
+        current_dir = os.path.dirname(os.path.abspath('__file__'))
+        bounce_load_table = os.path.abspath(os.path.join(current_dir, '.', 'files/participant_metadata_reference.xlsx'))
+        bounce_load_table = pd.read_excel(bounce_load_table)
+
         for bounce_file_id in edited_bounce_files.keys():
             file_name, file_ext = os.path.splitext(bounce_file_id)
             participant_id = bounce_file_id.split('_')[0]
@@ -91,6 +96,11 @@ class StatBounceAnalyser(BounceAnalyser):
                 print("For repeated measures ANOVA, please specify the metric.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
+
+        # TEST: if relative force calculation is working
+        df = self.calculate_relative_force(p_o_i, bounce_load_table)
+        print(df.head())
+        df.to_csv('analyser/relative_force_results.csv', index=False)
 
     def summary_statistics_by_type(self, p_o_i, bounce_type):
         filtered_poi = {k: v for k, v in p_o_i.items() if bounce_type in k}

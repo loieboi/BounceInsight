@@ -537,3 +537,29 @@ class BounceAnalyser:
             plt.show()
         else:
             pass
+
+    def calculate_relative_force(self, p_o_i, bounce_load_table):
+        results = []
+
+        for file_name, data in p_o_i.items():
+            participant_id = file_name.split('_')[0]
+            file_name, file_ext = os.path.splitext(file_name)
+            self.update_metadata(bounce_load_table, participant_id, file_name, verbose=False)
+            baseline_weight = (self.metadata['bodyweight']) * 9.81  # Check if load is also needed
+
+            turning_force = data['turning_force'] if 'turning_force' in data else None
+            con_force = data['con_force'] if 'con_force' in data else None
+
+            turning_force_relative = turning_force / baseline_weight if turning_force else None
+            con_force_relative = con_force / baseline_weight if con_force else None
+
+            results.append({
+                'file_name': file_name,
+                'participant_id': participant_id,
+                'turning_force_relative': turning_force_relative,
+                'con_force_relative': con_force_relative,
+                'baseline_weight': baseline_weight
+            })
+
+        relative_force_df = pd.DataFrame(results)
+        return relative_force_df

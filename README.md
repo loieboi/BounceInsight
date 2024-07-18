@@ -105,7 +105,7 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
   - [x] Display Correlation of Validation Data
   - [x] Limit of Agreements --> especially time, if data is usable
   - [ ] ~~Edit Gymaware data to match Forceplate data in case needed~~
-- [ ] **Implement ability to calculate Force relative to Bodyweight**
+- [x] **Implement method in bounce_analyser.py to calculate Force relative to Bodyweight (~~and Load~~)**
 - [ ] **Statistical Analysis:**
   - [ ] Statistical Analysis similar to the one in the paper
     - [ ] Extract Gymaware Data, like in the paper
