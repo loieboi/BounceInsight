@@ -98,7 +98,7 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
 - [x] Implement detection of Concentric Phase Time, t<sub>con</sub>
 - [x] Implement detection of "Inverse Point" Force; variable name: tunring_force
 - [ ] Add gender differentiation to metadata file and use it for analysis
-- [ ] **Validation of Forceplate data with Gymaware data**
+- [x] **Validation of Forceplate data with Gymaware data**
   - [x] Read t_ecc, t_con, t_total, F_ecc and F_con from the Gymaware data
   - [x] Compare Gymdata with Forceplate data and save to CSV and Excel file
   - [x] Bland–Altman plot for comparing Gymaware and Forceplate data
