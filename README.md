@@ -94,14 +94,42 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
   - Impact of Eccentric Phase Time on peak power <sup>[w.i.p.]</sup>
 
 ## TODO List
-- [ ] Implement detection of Eccentric Phase Time, t<sub>ecc</sub>
-- [ ] Implement detection of Concentric Phase Time, t<sub>con</sub>
-- [ ] Implement detection of "Inverse Point" Force
-- [ ] Validate t<sub>ecc</sub> and t<sub>con</sub> with the Gymaware data
-- [ ] Implement analysis of the impact of weight on peak power
-- [ ] Implement analysis of the impact of Eccentric Phase Time on peak power
-
-
+- [x] Implement detection of Eccentric Phase Time, t<sub>ecc</sub>
+- [x] Implement detection of Concentric Phase Time, t<sub>con</sub>
+- [x] Implement detection of "Inverse Point" Force; variable name: tunring_force
+- [ ] Add gender differentiation to metadata file and use it for analysis
+- [ ] **Validation of Forceplate data with Gymaware data**
+  - [x] Read t_ecc, t_con, t_total, F_ecc and F_con from the Gymaware data
+  - [X] Compare Gymdata with Forceplate data and save to CSV and Excel file
+  - [ ] Bland–Altman plot for comparing Gymaware and Forceplate data
+  - [ ] Display Correlation of Validation Data
+  - [ ] Limit of Agreements --> especially time, if data is usable
+  - [ ] Edit Gymaware data to match Forceplate data in case needed
+- [ ] **Implement ability to calculate Force relative to Bodyweight**
+- [ ] **Statistical Analysis:**
+  - [ ] Statistical Analysis similar to the one in the paper
+    - [ ] Extract Gymaware Data, like in the paper
+      - [ ] Average Power
+      - [ ] Average Velocity
+      - [ ] Peak Power
+      - [ ] Time to Peak Power
+      - [ ] Peak Velocity
+      - [ ] Time to Peak Velocity
+    - [ ] Test for Normality
+    - [ ] Test for Homogeneity of Variance
+    - [ ] Perform paired t-test for bounce vs nobounce
+      - [ ] 70%
+      - [ ] 80%
+      - [ ] slow
+      - [ ] fast
+      - [ ] weight combined
+      - [ ] speed combined
+    - [ ] twoway split-plot repeated analyses of variance (ANOVA) 
+      - [ ] [withinsubject factor: lowering cue (slow, medium, and fast)] x [betweensubject factor: condition (BPT and BPTbounce)]
+    - [ ] Paired t-tests with Bonferroni post hoc correction
+    - [ ] Cohen’s d and interpreted according to the following scale: 0.0–0.2 (trivial), 0.2–0.5 (small), 0.5–0.8 (moderate), and >0.8 (large)
+  - [ ] Correlogram for all metrics
+  - 
 ## Acknowledgements
 
 Special thanks to my supervisor, [acbasil](https://github.com/acbasil), for laying the foundation of this project and providing the groundwork for segmenting velocity and acceleration-based data. My goal is to extend this work to include segmentation and analysis of force plate data.
