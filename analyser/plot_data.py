@@ -42,3 +42,5 @@ class DataPlotter(BounceAnalyser):
 
             self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, con_force, plot=True,
                           verbose=verbose)
+        print(self.metadata)
+        

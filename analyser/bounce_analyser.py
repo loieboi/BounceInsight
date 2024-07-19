@@ -149,11 +149,14 @@ class BounceAnalyser:
         bodyweight_2 = participant_row['bodyweight_2'].values[0]
         load_70 = participant_row['bounce70_load'].values[0]
         load_80 = participant_row['bounce80_load'].values[0]
+        gender = participant_row['gender'].values[0]
 
         # This logic is used to load the correct load and bodyweight
         # for each of the participant by using the files prefix
 
         file_name = file_name.split('_', 1)[-1]
+
+        self.metadata['gender'] = gender
 
         if file_name.startswith('bounce70'):
             self.metadata['load'] = load_70
