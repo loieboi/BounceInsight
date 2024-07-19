@@ -56,14 +56,15 @@ def clean_and_reformat_data(file_path, output_file_path, participant_ids):
     # Rename the columns appropriately
     data.columns = [
         'Row Type', 'Rep Number', 't_ecc', 't_con', 't_total',
-        'F_ecc', 'F_con', 'F_mean_con', 'Extra1', 'Extra2'
+        'F_ecc', 'F_con', 'F_mean_con', 'tpF', 'tpP', 'tpV', 'V_mean_ecc', 'P_peak_ecc', 'V_peak_ecc', 'P_mean_con',
+        'V_mean_con', 'P_peak_con', 'V_peak_con', 'dip_m', 'lD_m', 'hor_m'
     ]
 
     # Keep only the relevant rows (i.e., rows where 'Row Type' is 'Rep')
     data = data[data['Row Type'] == 'Rep']
 
     # Drop unnecessary columns
-    data = data.drop(columns=['Row Type', 'Rep Number', 'Extra1', 'Extra2'])
+    data = data.drop(columns=['Row Type', 'Rep Number'])
 
     # Generate file names based on the participant IDs
     unique_ids = pd.Series(participant_ids).unique()
@@ -98,6 +99,6 @@ def process_gymaware_data(name_to_id_file, input_file, output_file):
 if __name__ == "__main__":
     current_dir = os.path.dirname('__file__')
     name_to_id_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/name_to_id_map.csv'))
-    input_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/bounce_data_gymaware.csv'))
-    output_file = os.path.abspath(os.path.join(current_dir, '..', 'validation/validation_gymaware.csv'))
+    input_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/bounce_data_gymaware_all_v2.csv'))
+    output_file = os.path.abspath(os.path.join(current_dir, '..', 'files/gymaware_all.csv'))
     process_gymaware_data(name_to_id_file, input_file, output_file)

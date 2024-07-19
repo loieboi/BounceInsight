@@ -109,13 +109,13 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
 - [x] **Implement method in bounce_analyser.py to calculate Force relative to Bodyweight (~~and Load~~)**
 - [ ] **Statistical Analysis:**
   - [ ] Statistical Analysis similar to the one in the paper
-    - [ ] Extract Gymaware Data, like in the paper
-      - [ ] Average Power
-      - [ ] Average Velocity
-      - [ ] Peak Power
-      - [ ] Time to Peak Power
-      - [ ] Peak Velocity
-      - [ ] Time to Peak Velocity
+    - [x] Extract Gymaware Data, like in the paper
+      - [x] Average Power
+      - [x] Average Velocity
+      - [x] Peak Power
+      - [x] Time to Peak Power
+      - [x] Peak Velocity
+      - [x] Time to Peak Velocity
     - [ ] Test for Normality
     - [ ] Test for Homogeneity of Variance
     - [ ] Perform paired t-test for bounce vs nobounce
