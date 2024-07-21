@@ -118,7 +118,7 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
       - [x] Time to Peak Velocity
     - [ ] Test for Normality
     - [ ] Test for Homogeneity of Variance
-    - [ ] Perform paired t-test for bounce vs nobounce
+    - [ ] Perform paired t-test for bounce vs nobounce including gender differentiation and overall
       - [ ] 70%
       - [ ] 80%
       - [ ] slow
