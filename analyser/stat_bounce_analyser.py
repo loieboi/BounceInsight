@@ -101,18 +101,125 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.show()
 
     def calculate_anova(self, df_fp, metric, comparison_type):
+        data = []
         print("----------------------------------------------------")
-        if comparison_type.startswith('b_nb'):
-            df_fp['group'] = df_fp['file_name'].apply(lambda x: 'bounce' if 'b' in x else 'nobounce')
-        else:
-            raise ValueError(f"Invalid comparison type: {comparison_type}")
 
-        df_filtered = df_fp[['participant_id', 'group', metric]].dropna()
+        # Sort into two groups based on comparison type
+        for index, row in df_fp.iterrows():
+            file_name = row['file_name']
+            parts = file_name.split('_')
+            if len(parts) >= 2:
+                group = parts[1].split('.')[0]
+                base_group = group[:-1]
+
+                if comparison_type.startswith('weight'):
+                    if '70b' in base_group or '80b' in base_group or '70nb' in base_group or '80nb' in base_group:
+                        group = base_group
+                elif comparison_type.startswith('speed'):
+                    if 'slowb' in base_group or 'fastb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
+                        group = base_group
+                elif comparison_type == 'b_nb_all':
+                    if '70b' in base_group or '80b' in base_group or 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                elif comparison_type == 'b_nb_fast':
+                    if 'fastb' in base_group:
+                        group = 'fastb'
+                    elif 'fastnb' in base_group:
+                        group = 'fastnb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_slow':
+                    if 'slowb' in base_group:
+                        group = 'slowb'
+                    elif 'slownb' in base_group:
+                        group = 'slownb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_70':
+                    if '70b' in base_group:
+                        group = 'bounce70b'
+                    elif '70nb' in base_group:
+                        group = 'bounce70nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_80':
+                    if '80b' in base_group:
+                        group = 'bounce80b'
+                    elif '80nb' in base_group:
+                        group = 'bounce80nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_weight':
+                    if '70b' in base_group or '80b' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_speed':
+                    if 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                else:
+                    print(f"Invalid comparison type: {comparison_type}")
+                    return
+
+                if metric in row:
+                    data.append({
+                        'file_id': file_name,
+                        'group': group,
+                        metric: row[metric]
+                    })
+
+        if not data:
+            print("No data found to prepare ANOVA DataFrame")
+            return
+
+        df = pd.DataFrame(data)
+
+        comparison_dict = {
+            'weightb': ('bounce70b', 'bounce80b'),
+            'weightnb': ('bounce70nb', 'bounce80nb'),
+            'speedb': ('slowb', 'fastb'),
+            'speednb': ('slownb', 'fastnb'),
+            'b_nb_all': ('bounce', 'nobounce'),
+            'b_nb_fast': ('fastb', 'fastnb'),
+            'b_nb_slow': ('slowb', 'slownb'),
+            'b_nb_70': ('bounce70b', 'bounce70nb'),
+            'b_nb_80': ('bounce80b', 'bounce80nb'),
+            'b_nb_weight': ('bounce', 'nobounce'),
+            'b_nb_speed': ('bounce', 'nobounce')
+        }
+
+        if comparison_type not in comparison_dict:
+            print(f"Invalid comparison type: {comparison_type}")
+            return
+
+        group1, group2 = comparison_dict[comparison_type]
+
+        df_filtered = df[(df['group'] == group1) | (df['group'] == group2)].copy()
         df_filtered['group'] = df_filtered['group'].astype('category')
 
         if df_filtered.empty:
-            print(f"No data available for ANOVA on {metric}")
+            print(f"No data available for comparison between {group1} and {group2}")
             return
+
+        if metric not in df_filtered.columns:
+            print(f"Metric {metric} not found in data")
+            return
+
+        # Remove missing or non-numeric values
+        df_filtered = df_filtered.dropna(subset=[metric])
+        df_filtered = df_filtered[pd.to_numeric(df_filtered[metric], errors='coerce').notnull()]
+
+        # Debug prints
+        print(f"Groups in df_filtered: {df_filtered['group'].unique()}")
+        print(f"Number of entries in each group: {df_filtered['group'].value_counts()}")
 
         # Check assumptions
         homogeneity_passed = self.check_anova_assumptions(df_filtered, metric)
@@ -121,17 +228,18 @@ class StatBounceAnalyser(BounceAnalyser):
             # Perform standard ANOVA
             model = ols(f'{metric} ~ C(group)', data=df_filtered).fit()
             anova_table = sm.stats.anova_lm(model, typ=2)
-            print(f'ANOVA results for {metric}:')
+            print(f'ANOVA results for {metric} comparing {group1} and {group2}:')
             print(anova_table)
         else:
             # Perform Welch's ANOVA
             anova_table = anova_oneway(df_filtered[metric], df_filtered['group'], use_var="unequal")
-            print(f'Welch\'s ANOVA results for {metric}:')
+            print(f'Welch\'s ANOVA results for {metric} comparing {group1} and {group2}:')
             print(f"{'Statistic':<15}: {anova_table.statistic:.4f} {'':<15} {'p-value':<15}: {anova_table.pvalue:.4e}")
 
+        # Plotting
         plt.figure(figsize=(10, 6))
         sns.boxplot(x='group', y=metric, data=df_filtered)
-        plt.title(f'{metric} comparison')
+        plt.title(f'{metric} comparison between {group1} and {group2}')
         plt.show()
 
     def check_anova_assumptions(self, df, metric):
