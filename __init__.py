@@ -90,7 +90,7 @@ class BounceInsight:
         data_plotter = DataPlotter(self.metadata, metadata_table_path)
         data_plotter.plot_bounce_data(edited_bounce_files, verbose=verbose)
 
-    def run_statistics(self, analysis_type=None, comparison_type=None, metric=None, metric1=None, metric2=None):  # statistics
+    def run_statistics(self, analysis_type=None, comparison_type=None, metric=None, metric1=None, metric2=None, bounce_type=None):  # statistics
         if analysis_type is None:
             analysis_type = input("Please enter the type of analysis you want: ")
 
@@ -107,5 +107,7 @@ class BounceInsight:
             stat_analyser.analyze_statistics(analysis_type=analysis_type, metric=metric)
         elif analysis_type == 'cor':
             stat_analyser.analyze_statistics(analysis_type=analysis_type, metric1=metric1, metric2=metric2)
+        elif analysis_type == 'summary':
+            stat_analyser.analyze_statistics(analysis_type=analysis_type, bounce_type=bounce_type)
         else:
             stat_analyser.analyze_statistics(analysis_type=analysis_type)

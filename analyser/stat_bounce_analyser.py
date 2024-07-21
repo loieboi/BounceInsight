@@ -19,7 +19,7 @@ class StatBounceAnalyser(BounceAnalyser):
         super().__init__(metadata)
         self.metadata_table = pd.read_excel(metadata_table_path)
 
-    def analyze_statistics(self, analysis_type, comparison_type=None, metric=None, metric1=None, metric2=None):
+    def analyze_statistics(self, analysis_type, comparison_type=None, metric=None, metric1=None, metric2=None, bounce_type=None):
         df_fp, df_gym = self.load_data()
         for index, row in df_fp.iterrows():
             participant_id = row['participant_id']
@@ -33,7 +33,6 @@ class StatBounceAnalyser(BounceAnalyser):
 
         # Perform the requested analysis
         if analysis_type == 'summary':
-            bounce_type = input("Please enter the bounce type you want to analyze: ")
             if bounce_type == 'all' or None:
                 bounce_type = None
                 self.summary_statistics(df_fp, bounce_type)
@@ -216,10 +215,6 @@ class StatBounceAnalyser(BounceAnalyser):
         # Remove missing or non-numeric values
         df_filtered = df_filtered.dropna(subset=[metric])
         df_filtered = df_filtered[pd.to_numeric(df_filtered[metric], errors='coerce').notnull()]
-
-        # Debug prints
-        print(f"Groups in df_filtered: {df_filtered['group'].unique()}")
-        print(f"Number of entries in each group: {df_filtered['group'].value_counts()}")
 
         # Check assumptions
         homogeneity_passed = self.check_anova_assumptions(df_filtered, metric)
