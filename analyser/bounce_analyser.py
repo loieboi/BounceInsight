@@ -87,7 +87,7 @@ class BounceAnalyser:
                                 verbose=verbose)
 
             # --- Update CSV File with validation data for validator.py file ---
-            self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, verbose=verbose)
+            self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, has_dip, verbose=verbose)
 
             # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
@@ -168,7 +168,8 @@ class BounceAnalyser:
             self.metadata['load'] = load_70
             self.metadata['bodyweight'] = bodyweight_2
         else:
-            raise ValueError('File name not recognised')
+            print(f'File name not recognised: {file_name}')
+
 
     def search_poi(self, bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name, verbose=False):
         combined = bounce_files[bounce_file_id]['combined_force'].reset_index(drop=True)
@@ -392,14 +393,16 @@ class BounceAnalyser:
 
         return con_force
 
-    def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, verbose=False):
+    def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, has_dip, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
+        analyser_folder_path = os.path.join(current_dir, 'files')
         validation_csv_path = os.path.join(validation_folder_path, 'validation_forceplate.csv')
+        forceplate_data_csv = os.path.join(analyser_folder_path, 'forceplate_data.csv')
         if os.path.exists(validation_csv_path):
             df = pd.read_csv(validation_csv_path, dtype={'participant_id': str})
         else:
-            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force', 'con_force'])
+            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force', 'con_force', 'has_dip'])
 
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
@@ -415,6 +418,8 @@ class BounceAnalyser:
             df['turning_force'] = df['turning_force'].astype(str)
         if 'con_force' in df.columns:
             df['con_force'] = df['con_force'].astype(str)
+            if 'has_dip' in df.columns:
+                df['has_dip'] = df['has_dip'].astype(str)
 
         # Duplicate check and overwrite if there is already a row with the same file_name and participant_id
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
@@ -427,7 +432,8 @@ class BounceAnalyser:
                 't_con': str(t_con),
                 't_total': str(t_total),
                 'turning_force': str(turning_force),
-                'con_force': str(con_force)
+                'con_force': str(con_force),
+                'has_dip': str(has_dip)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
@@ -437,8 +443,10 @@ class BounceAnalyser:
             df.loc[mask, 't_total'] = str(t_total)
             df.loc[mask, 'turning_force'] = str(turning_force)
             df.loc[mask, 'con_force'] = str(con_force)
+            df.loc[mask, 'has_dip'] = str(has_dip)
 
         df.to_csv(validation_csv_path, index=False)
+        df.to_csv(forceplate_data_csv, index=False)
 
         if verbose:
             print("Updated DataFrame:")

@@ -5,6 +5,7 @@ from .utils.file_identifier import FileIdentifier
 from utils.reader import Reader, FPReader, FP3DReader, Raw_FP_Reader
 from .analyser.plot_data import DataPlotter
 from .analyser.stat_bounce_analyser import StatBounceAnalyser
+from .analyser.stat_bounce_analyser_old import StatBounceAnalyserOld
 import pandas as pd
 import os
 
@@ -94,6 +95,27 @@ class BounceInsight:
         if analysis_type is None:
             analysis_type = input("Please enter the type of analysis you want: ")
 
+        current_dir = os.path.dirname(os.path.abspath('__file__'))
+        metadata_table_path = os.path.abspath(os.path.join(current_dir, 'files/participant_metadata_reference.xlsx'))
+        stat_analyser = StatBounceAnalyser(self.metadata, metadata_table_path)
+
+        if analysis_type == 'anova':
+            stat_analyser.analyze_statistics(analysis_type=analysis_type,
+                                             metric=metric, comparison_type=comparison_type)
+        elif analysis_type == 'chi2':
+            stat_analyser.analyze_statistics(analysis_type=analysis_type, comparison_type=comparison_type)
+        elif analysis_type == 'regression' or analysis_type == 'repeated_anova':
+            stat_analyser.analyze_statistics(analysis_type=analysis_type, metric=metric)
+        elif analysis_type == 'cor':
+            stat_analyser.analyze_statistics(analysis_type=analysis_type, metric1=metric1, metric2=metric2)
+        else:
+            stat_analyser.analyze_statistics(analysis_type=analysis_type)
+
+    def run_statistics_old(self, analysis_type=None, comparison_type=None, metric=None, metric1=None,
+                       metric2=None):  # statistics old, for checking
+        if analysis_type is None:
+            analysis_type = input("Please enter the type of analysis you want: ")
+
         edited_filepath = os.path.abspath(os.path.join(self.filepath, '..', 'edited'))
 
         edited_bounce_files = {f: pd.read_csv(os.path.join(edited_filepath, f)) for f in
@@ -101,16 +123,18 @@ class BounceInsight:
 
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         metadata_table_path = os.path.abspath(os.path.join(current_dir, 'files/participant_metadata_reference.xlsx'))
-        stat_analyser = StatBounceAnalyser(self.metadata, metadata_table_path)
+        stat_analyser = StatBounceAnalyserOld(self.metadata, metadata_table_path)
 
         if analysis_type == 'anova':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type,
                                              metric=metric, comparison_type=comparison_type)
         elif analysis_type == 'chi2':
-            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, comparison_type=comparison_type)
+            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type,
+                                             comparison_type=comparison_type)
         elif analysis_type == 'regression' or analysis_type == 'repeated_anova':
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric=metric)
         elif analysis_type == 'cor':
-            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric1=metric1, metric2=metric2)
+            stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type, metric1=metric1,
+                                             metric2=metric2)
         else:
             stat_analyser.analyze_statistics(edited_bounce_files, analysis_type=analysis_type)
