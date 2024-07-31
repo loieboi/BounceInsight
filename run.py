@@ -2,6 +2,7 @@ import sys
 import os
 import tkinter as tk
 from tkinter import simpledialog, messagebox, ttk
+
 from io import StringIO
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -15,10 +16,10 @@ try:
     from BounceInsight import BounceInsight
 
     print("Successfully imported BounceInsight")
-except ModuleNotFoundError:
-    print("VBT module not found. Please check the module path.")
+except ModuleNotFoundError as e:
+    messagebox.showerror("ModuleNotFound", f"BounceInsight module not found. Or Module Missing. {e}")
 except Exception as e:
-    print(f"An unexpected error occurred: {e}")
+    messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
 # Load the BounceInsight object as boin
 try:
@@ -27,12 +28,14 @@ try:
 except Exception as e:
     messagebox.showerror("Error", f"Failed to load BounceInsight: {e}")
 
+
 def identify_files_wrapper():
     try:
         boin.identify_files()
         messagebox.showinfo("Success", "Files identified successfully.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to identify files: {e}")
+
 
 def analyse_bounce_wrapper():
     id_input = simpledialog.askstring("Input", "Enter ID:")
@@ -44,12 +47,14 @@ def analyse_bounce_wrapper():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to analyse bounce: {e}")
 
+
 def manual_segment_wrapper():
     try:
         boin.manual_segment(verbose=False)
         messagebox.showinfo("Success", "Manual segmentation completed successfully.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to segment manually: {e}")
+
 
 def validate_wrapper():
     tolerance = simpledialog.askfloat("Input", "Enter a percentage tolerance (default is 0.05): ")
@@ -61,6 +66,7 @@ def validate_wrapper():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to validate: {e}")
 
+
 def plot_data_wrapper():
     file_name_input = simpledialog.askstring("Input", "Enter file name:")
     try:
@@ -69,11 +75,18 @@ def plot_data_wrapper():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to plot data: {e}")
 
+
 def run_analysis_wrapper():
     try:
-        analysis_type = simpledialog.askstring("Input", "Enter analysis type (summary, cor, anova, chi2, repeated_anova):")
+        analysis_type = simpledialog.askstring("Input",
+                                               "Enter analysis type (summary, cor, anova, chi2, repeated_anova):")
 
-        if analysis_type in ['cor', 'anova', 'repeated_anova']:
+        if analysis_type in ['ttest']:
+            df_type = simpledialog.askstring("Input", "Enter the Data type you want to analyze (gym or fp):")
+        else:
+            df_type = None
+
+        if analysis_type in ['cor', 'anova', 'repeated_anova', 'ttest']:
             metric = simpledialog.askstring("Input", "Enter metric:")
         else:
             metric = None
@@ -84,7 +97,7 @@ def run_analysis_wrapper():
         else:
             metric1, metric2 = None, None
 
-        if analysis_type in ['anova', 'chi2']:
+        if analysis_type in ['anova', 'chi2', 'ttest']:
             comparison_type = simpledialog.askstring("Input", "Enter comparison type:")
         else:
             comparison_type = None
@@ -94,10 +107,11 @@ def run_analysis_wrapper():
         else:
             bounce_type = None
 
-        boin.run_statistics(analysis_type=analysis_type, comparison_type=comparison_type, metric=metric, metric1=metric1, metric2=metric2, bounce_type=bounce_type)
-        messagebox.showinfo("Success", "Statistical analysis completed successfully.")
+        boin.run_statistics(analysis_type=analysis_type, comparison_type=comparison_type, metric=metric,
+                            metric1=metric1, metric2=metric2, bounce_type=bounce_type, df_type=df_type)
     except Exception as e:
         messagebox.showerror("Error", f"Failed to run statistical analysis: {e}")
+
 
 # Initialize the root window
 root = tk.Tk()
@@ -155,17 +169,21 @@ output_text.pack(pady=10, fill=tk.BOTH, expand=True)
 exit_btn = ttk.Button(main_frame, text="Exit", command=root.quit, width=button_width)
 exit_btn.pack(pady=10)
 
+
 # Redirect stdout and stderr to the text widget
 def redirect_stdout_stderr(output_widget):
     def write(string):
         output_widget.insert(tk.END, string)
         output_widget.see(tk.END)
+
     def flush():
         pass
+
     sys.stdout.write = write
     sys.stderr.write = write
     sys.stdout.flush = flush
     sys.stderr.flush = flush
+
 
 redirect_stdout_stderr(output_text)
 
