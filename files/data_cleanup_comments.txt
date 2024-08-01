@@ -1,0 +1,15 @@
+Short comments on why data was removed and excluded from validation and analysis
+02_slowb1:          Invalid --> excluded due to unsatisfactory execution
+05_bounce70b2:      Invalid --> excluded due to unsatisfactory execution
+10_fastnb3:         No good FP Data --> only left FP recorded (Gymaware Data is available)
+20_bounce70b1:      No Gymaware Data (FP Data is available)
+22_bounce80nb3:     Invalid --> excluded due to fail while executing
+24_bounce70b3:      Invalid --> excluded due to unsatisfactory execution
+24_slowb1:          Invalid --> excluded due to unsatisfactory execution
+24_fastb3:          Invalid --> excluded due to unsatisfactory execution
+24_fastnb2:         Invalid --> excluded due to unsatisfactory execution
+36_fastnb4:         No FP data --> only on Gymaware Fata available but no info in protocol --> Check for exclusion
+38_fastnb1:          No FP Data --> only Gymaware Data available
+
+- Session 2 of ID 12: 	Strange Baseline reading --> Offset in FP Data should be respected
+14_all:                 Check for Invalidity --> excluded due to unsatisfactory execution and un-wellbeing of participant
