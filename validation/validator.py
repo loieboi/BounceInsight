@@ -136,7 +136,11 @@ class Validator:
 
         # Comparisons for force measurements
         force_comparisons = [
-            ('F_turning_fp', 'F_turning_gym', 'F_turning'),
+            ('F_turning_fp', 'F_turning_gym', 'F_turning')
+
+        ]
+
+        force_con_comparisons = [
             ('F_con_fp', 'F_con_gym', 'F_con')
         ]
 
@@ -145,6 +149,9 @@ class Validator:
 
         # Create Bland-Altman plot for force measurements
         self._bland_altman_plot(merged_df, force_comparisons, "Bland-Altman Plot for Force Measurements")
+
+        # Create Bland-Altman plot for Concentric force measurements
+        self._bland_altman_plot(merged_df, force_con_comparisons, "Bland-Altman Plot for Force Measurements")
 
     def _bland_altman_plot(self, df, comparisons, title):
         plt.figure(figsize=(12, 8))

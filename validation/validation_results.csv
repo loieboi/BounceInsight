@@ -45,13 +45,11 @@ file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison
 20_bounce80nb3,20,0.43,gym_higher,0.46,fp_higher,,,,,,
 23_fastnb1,23,,,0.31,gym_higher,,,,,,
 23_fastnb2,23,,,0.31,gym_higher,,,,,,
-24_bounce70b3,24,0.77,gym_higher,0.72,gym_higher,1.52,gym_higher,,,582.11,gym_higher
 24_bounce70nb1,24,,,0.26,gym_higher,,,,,,
 24_bounce70nb3,24,0.78,gym_higher,,,0.92,gym_higher,,,,
 24_fastnb1,24,0.46,fp_higher,,,,,,,,
 24_fastnb3,24,,,0.23,gym_higher,,,,,,
 24_fastnb4,24,,,0.22,gym_higher,,,,,,
-24_slowb1,24,,,0.31,gym_higher,,,2098.51,gym_higher,875.59,gym_higher
 24_slownb1,24,1.68,fp_higher,0.23,gym_higher,1.34,fp_higher,,,,
 24_slownb2,24,1.6,fp_higher,0.27,gym_higher,1.26,fp_higher,,,,
 28_bounce70nb1,28,,,0.37,gym_higher,,,,,,
