@@ -130,7 +130,8 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
     - [ ] Paired t-tests with Bonferroni post hoc correction
     - [ ] Cohen’s d and interpreted according to the following scale: 0.0–0.2 (trivial), 0.2–0.5 (small), 0.5–0.8 (moderate), and >0.8 (large)
   - [ ] Correlogram for all metrics
-  - 
+  - [ ] Change naming from gymaware_data F_ecc to turning_force
+  - [ ] remove false and wrong Data from edited files
 ## Acknowledgements
 
 Special thanks to my supervisor, [acbasil](https://github.com/acbasil), for laying the foundation of this project and providing the groundwork for segmenting velocity and acceleration-based data. My goal is to extend this work to include segmentation and analysis of force plate data.

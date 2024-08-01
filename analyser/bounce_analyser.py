@@ -32,7 +32,8 @@ class BounceAnalyser:
         bounce_load_table = os.path.abspath(os.path.join(current_dir, '.', 'files/participant_metadata_reference.xlsx'))
         bounce_load_table = pd.read_excel(bounce_load_table)
 
-        progress_bar = tqdm(edited_bounce_files, desc="Processing files", colour='red')  # Not very important feature: a loading bar
+        progress_bar = tqdm(edited_bounce_files, desc="Processing files",
+                            colour='red')  # Not very important feature: a loading bar
 
         # --- Initialize DataFrames ---
         for bounce_file_id in progress_bar:
@@ -54,31 +55,31 @@ class BounceAnalyser:
                 t_ecc = self.calculate_t_ecc(p_o_i, bounce_file_id)
                 t_con = self.calculate_t_con(p_o_i, bounce_file_id)
                 t_total = self.calculate_t_total(p_o_i, bounce_file_id)
-                turning_force = self.calculate_turning_force(p_o_i, bounce_file_id,
-                                                             bounce_files[bounce_file_id]['combined_force'])
-                con_force = self.find_con_force(p_o_i, bounce_file_id,
-                                                    bounce_files[bounce_file_id]['combined_force'])
+                f_turning = self.calculate_f_turning(p_o_i, bounce_file_id,
+                                                     bounce_files[bounce_file_id]['combined_force'])
+                f_con = self.find_f_con(p_o_i, bounce_file_id,
+                                        bounce_files[bounce_file_id]['combined_force'])
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
-
 
                 if verbose:
                     print(
                         f"File: {bounce_file_id}, t_ecc: {t_ecc:.3f} seconds, t_con: {t_con:.3f} seconds, t_total: {t_total:.3f} seconds")
-                    print(f'Turning force: {turning_force:.2f} N')
+                    print(f'Turning force: {f_turning:.2f} N')
                     dip_color = '\033[92m' if has_dip else '\033[91m'
                     print(f"{dip_color}Dip detected: {has_dip}\033[0m")
             else:
                 t_ecc = None
                 t_con = None
                 t_total = None
-                turning_force = None
+                f_turning = None
                 has_dip = False
-                con_force = None
+                f_con = None
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
             # --- Plot Points of Interest in the correct graph (index is zeroed, so not applicable to raw files,
             # but in poi.csv the values are correct) ---
-            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, con_force, plot=plot,verbose=verbose)
+            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, f_con, plot=plot,
+                          verbose=verbose)
 
             # --- Update CSV File with points of interests ---
             self.update_csv_poi(file_name, participant_id, p_o_i[bounce_file_id]['pos_peaks'],
@@ -87,7 +88,8 @@ class BounceAnalyser:
                                 verbose=verbose)
 
             # --- Update CSV File with validation data for validator.py file ---
-            self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, has_dip, verbose=verbose)
+            self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, f_turning, f_con, has_dip,
+                                       verbose=verbose)
 
             # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
@@ -169,7 +171,6 @@ class BounceAnalyser:
             self.metadata['bodyweight'] = bodyweight_2
         else:
             print(f'File name not recognised: {file_name}')
-
 
     def search_poi(self, bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name, verbose=False):
         combined = bounce_files[bounce_file_id]['combined_force'].reset_index(drop=True)
@@ -352,11 +353,11 @@ class BounceAnalyser:
         t_total = t_total_frames / frame_rate
         return t_total
 
-    def calculate_turning_force(self, p_o_i, bounce_file_id, combined_force):
+    def calculate_f_turning(self, p_o_i, bounce_file_id, combined_force):
         poi = p_o_i[bounce_file_id]
         turning_point = poi['turning_points'][0] if poi['turning_points'] else None
-        turning_force = combined_force.iloc[turning_point]
-        return turning_force
+        f_turning = combined_force.iloc[turning_point]
+        return f_turning
 
     def find_dip_bounce(self, p_o_i, bounce_file_id, frames_before_turning_point=500):
         poi = p_o_i[bounce_file_id]
@@ -377,7 +378,7 @@ class BounceAnalyser:
 
         return has_dip
 
-    def find_con_force(self, p_o_i, bounce_file_id, combined_force):
+    def find_f_con(self, p_o_i, bounce_file_id, combined_force):
         poi = p_o_i[bounce_file_id]
         last_baseline_crossing = poi['baseline_crossings'][-1]
 
@@ -386,14 +387,15 @@ class BounceAnalyser:
         pos_peaks_before_last_crossing.sort()
         if pos_peaks_before_last_crossing:
             # Select the last positive peak before the last baseline crossing
-            con_force_peak = pos_peaks_before_last_crossing[-1]
-            con_force = combined_force.iloc[con_force_peak]
+            f_con_peak = pos_peaks_before_last_crossing[-1]
+            f_con = combined_force.iloc[f_con_peak]
         else:
-            con_force = None
+            f_con = None
 
-        return con_force
+        return f_con
 
-    def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, turning_force, con_force, has_dip, verbose=False):
+    def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, f_turning, f_con, has_dip,
+                              verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
         analyser_folder_path = os.path.join(current_dir, 'files')
@@ -402,7 +404,8 @@ class BounceAnalyser:
         if os.path.exists(validation_csv_path):
             df = pd.read_csv(validation_csv_path, dtype={'participant_id': str})
         else:
-            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'turning_force', 'con_force', 'has_dip'])
+            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'F_turning',
+                                       'F_con', 'has_dip'])
 
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
@@ -414,10 +417,10 @@ class BounceAnalyser:
             df['t_con'] = df['t_con'].astype(str)
         if 't_total' in df.columns:
             df['t_total'] = df['t_total'].astype(str)
-        if 'turning_force' in df.columns:
-            df['turning_force'] = df['turning_force'].astype(str)
-        if 'con_force' in df.columns:
-            df['con_force'] = df['con_force'].astype(str)
+        if 'F_turning' in df.columns:
+            df['F_turning'] = df['F_turning'].astype(str)
+        if 'F_con' in df.columns:
+            df['F_con'] = df['F_con'].astype(str)
             if 'has_dip' in df.columns:
                 df['has_dip'] = df['has_dip'].astype(str)
 
@@ -431,18 +434,18 @@ class BounceAnalyser:
                 't_ecc': str(t_ecc),
                 't_con': str(t_con),
                 't_total': str(t_total),
-                'turning_force': str(turning_force),
-                'con_force': str(con_force),
+                'F_turning': str(f_turning),
+                'F_con': str(f_con),
                 'has_dip': str(has_dip)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
-            # Update the t_ecc, t_con, t_total, and turning_force columns for that row with the new data
+            # Update the t_ecc, t_con, t_total, and F_turning columns for that row with the new data
             df.loc[mask, 't_ecc'] = str(t_ecc)
             df.loc[mask, 't_con'] = str(t_con)
             df.loc[mask, 't_total'] = str(t_total)
-            df.loc[mask, 'turning_force'] = str(turning_force)
-            df.loc[mask, 'con_force'] = str(con_force)
+            df.loc[mask, 'F_turning'] = str(f_turning)
+            df.loc[mask, 'F_con'] = str(f_con)
             df.loc[mask, 'has_dip'] = str(has_dip)
 
         df.to_csv(validation_csv_path, index=False)
@@ -452,7 +455,8 @@ class BounceAnalyser:
             print("Updated DataFrame:")
             print(df)
 
-    def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, t_ecc, t_con, t_total, con_force, plot=False, verbose=False):
+    def plot_poi(self, bounce_files, bounce_file_id, p_o_i, threshold, t_ecc, t_con, t_total, f_con, plot=False,
+                 verbose=False):
         if plot:
             combined = bounce_files[bounce_file_id]['combined_force'].reset_index(drop=True)
             fig, ax = plt.subplots(figsize=(20, 10))
@@ -486,7 +490,7 @@ class BounceAnalyser:
             else:
                 baseline = threshold
 
-            if con_force is not None:
+            if f_con is not None:
                 last_baseline_crossing = poi['baseline_crossings'][-1]
                 pos_peaks_before_last_crossing = [peak for peak in poi['pos_peaks'] if peak < last_baseline_crossing]
                 pos_peaks_before_last_crossing.sort()
@@ -503,9 +507,10 @@ class BounceAnalyser:
                     ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='#47D749',
                                     alpha=0.3)
                 if any(peak in poi['neg_peaks'] for peak in x_values):
-                    ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='#E9190F', alpha=0.3)
+                    ax.fill_between(x_values, baseline[start:end + 1], combined[start:end + 1], color='#E9190F',
+                                    alpha=0.3)
 
-            # Plot (if available) t_ecc and t_con
+                    # Plot (if available) t_ecc and t_con
                     try:
                         if len(poi['baseline_crossings']) > 0 and len(poi['turning_points']) > 0:
                             first_baseline_crossing = poi['baseline_crossings'][0]
@@ -558,17 +563,17 @@ class BounceAnalyser:
             self.update_metadata(bounce_load_table, participant_id, file_name, verbose=False)
             baseline_weight = (self.metadata['bodyweight']) * 9.81  # Check if load is also needed
 
-            turning_force = data['turning_force'] if 'turning_force' in data else None
-            con_force = data['con_force'] if 'con_force' in data else None
+            f_turning = data['F_turning'] if 'F_turning' in data else None
+            f_con = data['F_con'] if 'F_con' in data else None
 
-            turning_force_relative = turning_force / baseline_weight if turning_force else None
-            con_force_relative = con_force / baseline_weight if con_force else None
+            f_turning_relative = f_turning / baseline_weight if f_turning else None
+            f_con_relative = f_con / baseline_weight if f_con else None
 
             results.append({
                 'file_name': file_name,
                 'participant_id': participant_id,
-                'turning_force_relative': turning_force_relative,
-                'con_force_relative': con_force_relative,
+                'F_turning_relative': f_turning_relative,
+                'F_con_relative': f_con_relative,
                 'baseline_weight': baseline_weight
             })
 

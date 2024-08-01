@@ -80,7 +80,7 @@ class StatBounceAnalyser(BounceAnalyser):
         self.summary_statistics(filtered_df, bounce_type)
 
     def summary_statistics(self, df_fp, bounce_type=None):
-        metrics = ['t_ecc', 't_con', 't_total', 'turning_force', 'con_force']
+        metrics = ['t_ecc', 't_con', 't_total', 'F_turning', 'F_con']
 
         print(f"Statistics for {bounce_type}:")
         for metric in metrics:
@@ -91,7 +91,8 @@ class StatBounceAnalyser(BounceAnalyser):
                 median = np.median(values)
                 min_val = np.min(values)
                 max_val = np.max(values)
-                print(f"{metric}; Avg: {avg:.3f}, Std Dev: {std_dev:.3f}, Median: {median:.3f}, Min: {min_val:.3f}, Max: {max_val:.3f}")
+                print(f"{metric}; Avg: {avg:.3f}, Std Dev: {std_dev:.3f}, Median: {median:.3f}, Min: {min_val:.3f},"
+                      f"Max: {max_val:.3f}")
             else:
                 print(f"{metric}; No data available")
 

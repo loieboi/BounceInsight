@@ -30,8 +30,8 @@ class Validator:
             't_ecc': 't_ecc',
             't_con': 't_con',
             't_total': 't_total',
-            'turning_force': 'F_ecc',
-            'con_force': 'F_con'
+            'F_turning': 'F_turning',
+            'F_con': 'F_con'
         }
 
         validation_results = []
@@ -48,10 +48,10 @@ class Validator:
                 't_con_comparison': None,
                 't_total_diff': None,
                 't_total_comparison': None,
-                'turning_force_diff': None,
-                'turning_force_comparison': None,
-                'con_force_diff': None,
-                'con_force_comparison': None
+                'F_turning_diff': None,
+                'F_turning_comparison': None,
+                'F_con_diff': None,
+                'F_con_comparison': None
             }
 
             for col_fp, col_gym in columns_to_compare.items():
@@ -77,7 +77,7 @@ class Validator:
 
         validation_df = pd.DataFrame(validation_results)
 
-        validation_df = validation_df.dropna(subset=['t_ecc_diff', 't_con_diff', 't_total_diff', 'turning_force_diff'],
+        validation_df = validation_df.dropna(subset=['t_ecc_diff', 't_con_diff', 't_total_diff', 'F_turning_diff'],
                                              how='all')
 
         validation_df.to_csv('validation/validation_results.csv', index=False)
@@ -110,7 +110,7 @@ class Validator:
                                 cell.fill = red_fill
                     except TypeError:
                         pass
-                elif cell.column_letter in ['I', 'K']:  # turning_force_diff and con_force_diff --> not that important
+                elif cell.column_letter in ['I', 'K']:
                     try:
                         if cell.value is not None:
                             if cell.value < 750:
@@ -136,8 +136,8 @@ class Validator:
 
         # Comparisons for force measurements
         force_comparisons = [
-            ('turning_force', 'F_ecc', 'turning_force'),
-            ('con_force', 'F_con', 'con_force')
+            ('F_turning_fp', 'F_turning_gym', 'F_turning'),
+            ('F_con_fp', 'F_con_gym', 'F_con')
         ]
 
         # Create Bland-Altman plot for time measurements
@@ -202,8 +202,8 @@ class Validator:
             ('t_ecc_fp', 't_ecc_gym', 't_ecc'),
             ('t_con_fp', 't_con_gym', 't_con'),
             ('t_total_fp', 't_total_gym', 't_total'),
-            ('turning_force', 'F_ecc', 'turning_force'),
-            ('con_force', 'F_con', 'con_force')
+            ('F_turning_fp', 'F_turning_gym', 'F_turning'),
+            ('F_con_fp', 'F_con_gym', 'F_con')
         ]
         for col1, col2, label in comparisons:
             valid_data = merged_df[[col1, col2]].dropna()

@@ -56,8 +56,8 @@ def clean_and_reformat_data(file_path, output_file_path, participant_ids):
     # Rename the columns appropriately
     data.columns = [
         'Row Type', 'Rep Number', 't_ecc', 't_con', 't_total',
-        'F_ecc', 'F_con', 'F_mean_con', 'tpF', 'tpP', 'tpV', 'V_mean_ecc', 'P_peak_ecc', 'V_peak_ecc', 'P_mean_con',
-        'V_mean_con', 'P_peak_con', 'V_peak_con', 'dip_m', 'lD_m', 'hor_m'
+        'F_turning', 'F_con', 'F_mean_con', 'tpF', 'tpP', 'tpV', 'V_mean_ecc', 'P_peak_ecc', 'V_peak_ecc',
+        'P_mean_con', 'V_mean_con', 'P_peak_con', 'V_peak_con', 'dip_m', 'lD_m', 'hor_m'
     ]
 
     # Keep only the relevant rows (i.e., rows where 'Row Type' is 'Rep')
