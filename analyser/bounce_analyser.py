@@ -45,7 +45,13 @@ class BounceAnalyser:
             # --- Clean Edited Bounce Files ---
             bounce_files = self.clean_edited_bounce_files(edited_bounce_files, bounce_file_id)
 
-            baseline = (self.metadata['bodyweight'] + self.metadata['load']) * 9.81
+            # --- Override Baseline for Participant 12 ---
+            if participant_id == '12' and any(cond in file_name for cond in ['slowb', 'slownb', 'fastb', 'fastnb']):
+                baseline = 2060
+                if verbose:
+                    print(f"Overriding baseline for participant 12 in file {bounce_file_id}: {baseline} N")
+            else:
+                baseline = (self.metadata['bodyweight'] + self.metadata['load']) * 9.81
 
             # --- Search for Points of Interest ---
             self.search_poi(bounce_files, bounce_file_id, baseline, p_o_i, participant_id, file_name, verbose=verbose)

@@ -3,7 +3,7 @@ import numpy as np
 import os
 import math
 from scipy import stats
-from scipy.stats import chi2_contingency, levene, shapiro, lognorm
+from scipy.stats import chi2_contingency, levene, shapiro, lognorm, probplot
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
@@ -55,18 +55,20 @@ class StatBounceAnalyser(BounceAnalyser):
                 self.calculate_contingency_table(df_fp, comparison_type)
             else:
                 print("For Chi-square analysis, please specify comparison_type.")
-        elif analysis_type == 'repeated_anova':
-            if metric:
-                self.repeated_measures_anova(df_fp, metric)
-            else:
-                print("For repeated measures ANOVA, please specify the metric.")
         elif analysis_type == 'ttest':
             if metric and comparison_type and df_type == 'gym':
-                self.paired_ttest(df_gym, metric, comparison_type)
+                self.paired_ttest_with_averages(df_gym, metric, comparison_type)
             elif metric and comparison_type and df_type == 'fp':
-                self.paired_ttest(df_fp, metric, comparison_type)
+                self.paired_ttest_with_averages(df_fp, metric, comparison_type)
             else:
                 print("For paired t-test please specify.")
+        elif analysis_type == 'check_data':
+            if metric and comparison_type and df_type == 'gym':
+                self.check_data(df_gym, metric, comparison_type)
+            elif metric and comparison_type and df_type == 'fp':
+                self.check_data(df_fp, metric, comparison_type)
+            else:
+                print("For checking data please specify.")
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -97,173 +99,56 @@ class StatBounceAnalyser(BounceAnalyser):
                 print(f"{metric}; No data available")
 
     def calculate_cor(self, df_fp, metric1, metric2):
-        df_fp = df_fp.dropna(subset=[metric1, metric2])
-        correlation, p_val = stats.pearsonr(df_fp[metric1], df_fp[metric2])
-        print(f"Correlation between {metric1} and {metric2}: correlation = {correlation:.3f}, p-value = {p_val:.3f}")
-
-        plt.figure(figsize=(10, 6))
-        sns.regplot(x=metric1, y=metric2, data=df_fp, ci=None, scatter_kws={"s": 50, "alpha": 0.5})
-        plt.title(f'Scatter plot of {metric1} vs {metric2}\nCorrelation: {correlation:.3f}, p-value: {p_val:.3f}')
-        plt.xlabel(metric1)
-        plt.ylabel(metric2)
-        plt.grid(True)
-        plt.show()
+        return print(f'Not implemented yet')
 
     def calculate_anova(self, df_fp, metric, comparison_type):
-        data = []
-        print("----------------------------------------------------")
+        return print(f'Not implemented yet')
 
-        # Sort into two groups based on comparison type
-        for index, row in df_fp.iterrows():
-            file_name = row['file_name']
-            parts = file_name.split('_')
-            if len(parts) >= 2:
-                group = parts[1].split('.')[0]
-                base_group = group[:-1]
+    def check_homogeneity(self, df_grouped, group1, group2):
+        """
+        Check the homogeneity of variances between two groups using Levene's test.
+        """
+        group1_data = df_grouped[group1].dropna()
+        group2_data = df_grouped[group2].dropna()
 
-                if comparison_type.startswith('weight'):
-                    if '70b' in base_group or '80b' in base_group or '70nb' in base_group or '80nb' in base_group:
-                        group = base_group
-                elif comparison_type.startswith('speed'):
-                    if 'slowb' in base_group or 'fastb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
-                        group = base_group
-                elif comparison_type == 'b_nb_all':
-                    if '70b' in base_group or '80b' in base_group or 'slowb' in base_group or 'fastb' in base_group:
-                        group = 'bounce'
-                    elif '70nb' in base_group or '80nb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
-                        group = 'nobounce'
-                elif comparison_type == 'b_nb_fast':
-                    if 'fastb' in base_group:
-                        group = 'fastb'
-                    elif 'fastnb' in base_group:
-                        group = 'fastnb'
-                    else:
-                        continue
-                elif comparison_type == 'b_nb_slow':
-                    if 'slowb' in base_group:
-                        group = 'slowb'
-                    elif 'slownb' in base_group:
-                        group = 'slownb'
-                    else:
-                        continue
-                elif comparison_type == 'b_nb_70':
-                    if '70b' in base_group:
-                        group = 'bounce70b'
-                    elif '70nb' in base_group:
-                        group = 'bounce70nb'
-                    else:
-                        continue
-                elif comparison_type == 'b_nb_80':
-                    if '80b' in base_group:
-                        group = 'bounce80b'
-                    elif '80nb' in base_group:
-                        group = 'bounce80nb'
-                    else:
-                        continue
-                elif comparison_type == 'b_nb_weight':
-                    if '70b' in base_group or '80b' in base_group:
-                        group = 'bounce'
-                    elif '70nb' in base_group or '80nb' in base_group:
-                        group = 'nobounce'
-                    else:
-                        continue
-                elif comparison_type == 'b_nb_speed':
-                    if 'slowb' in base_group or 'fastb' in base_group:
-                        group = 'bounce'
-                    elif 'slownb' in base_group or 'fastnb' in base_group:
-                        group = 'nobounce'
-                    else:
-                        continue
-                else:
-                    print(f"Invalid comparison type: {comparison_type}")
-                    return
+        if group1_data.empty or group2_data.empty:
+            print(f"Insufficient data to perform homogeneity check for groups {group1} and {group2}")
+            return False
 
-                if metric in row:
-                    data.append({
-                        'file_id': file_name,
-                        'group': group,
-                        metric: row[metric]
-                    })
+        stat, p_value = levene(group1_data, group2_data)
 
-        if not data:
-            print("No data found to prepare ANOVA DataFrame")
-            return
-
-        df = pd.DataFrame(data)
-
-        comparison_dict = {
-            'weightb': ('bounce70b', 'bounce80b'),
-            'weightnb': ('bounce70nb', 'bounce80nb'),
-            'speedb': ('slowb', 'fastb'),
-            'speednb': ('slownb', 'fastnb'),
-            'b_nb_all': ('bounce', 'nobounce'),
-            'b_nb_fast': ('fastb', 'fastnb'),
-            'b_nb_slow': ('slowb', 'slownb'),
-            'b_nb_70': ('bounce70b', 'bounce70nb'),
-            'b_nb_80': ('bounce80b', 'bounce80nb'),
-            'b_nb_weight': ('bounce', 'nobounce'),
-            'b_nb_speed': ('bounce', 'nobounce')
-        }
-
-        if comparison_type not in comparison_dict:
-            print(f"Invalid comparison type: {comparison_type}")
-            return
-
-        group1, group2 = comparison_dict[comparison_type]
-
-        df_filtered = df[(df['group'] == group1) | (df['group'] == group2)].copy()
-        df_filtered['group'] = df_filtered['group'].astype('category')
-
-        if df_filtered.empty:
-            print(f"No data available for comparison between {group1} and {group2}")
-            return
-
-        if metric not in df_filtered.columns:
-            print(f"Metric {metric} not found in data")
-            return
-
-        # Remove missing or non-numeric values
-        df_filtered = df_filtered.dropna(subset=[metric])
-        df_filtered = df_filtered[pd.to_numeric(df_filtered[metric], errors='coerce').notnull()]
-
-        # Check assumptions
-        homogeneity_passed = self.check_homogeneity(df_filtered, metric)
-
-        if homogeneity_passed:
-            # Perform standard ANOVA
-            model = ols(f'{metric} ~ C(group)', data=df_filtered).fit()
-            anova_table = sm.stats.anova_lm(model, typ=2)
-            print(f'ANOVA results for {metric} comparing {group1} and {group2}:')
-            print(anova_table)
+        # Assuming alpha = 0.05 for significance level
+        if p_value > 0.05:
+            print("Homogeneity of variances assumption is met.")
+            return True
         else:
-            # Perform Welch's ANOVA
-            anova_table = anova_oneway(df_filtered[metric], df_filtered['group'], use_var="unequal")
-            print(f'Welch\'s ANOVA results for {metric} comparing {group1} and {group2}:')
-            print(f"{'Statistic':<15}: {anova_table.statistic:.4f} {'':<15} {'p-value':<15}: {anova_table.pvalue:.4e}")
+            print("Homogeneity of variances assumption is not met.")
+            return False
 
-        # Plotting
-        plt.figure(figsize=(10, 6))
-        sns.boxplot(x='group', y=metric, data=df_filtered)
-        plt.title(f'{metric} comparison between {group1} and {group2}')
-        plt.show()
+    def check_normality(self, df_grouped, group1, group2):
+        """
+        Check the normality of data distribution in each group using the Shapiro-Wilk test.
+        """
+        group1_data = df_grouped[group1].dropna()
+        group2_data = df_grouped[group2].dropna()
 
-    def check_homogeneity(self, df, metric):
-        # Levene's test for homogeneity of variances
-        group_categories = df['group'].cat.categories
-        w, p_value_homogeneity = levene(df[df['group'] == group_categories[0]][metric],
-                                        df[df['group'] == group_categories[1]][metric])
-        print(f"Levene's test for homogeneity of variances: W={w:.3f}, p-value={p_value_homogeneity:.3f}")
-        if p_value_homogeneity < 0.05:
-            print("Homogeneity of variances assumption not met")
-        return p_value_homogeneity >= 0.05
+        if group1_data.empty or group2_data.empty:
+            print(f"Insufficient data to perform normality check for groups {group1} and {group2}")
+            return False
 
-    def check_normality(self, df, metric):
-        group_categories = df['group'].cat.categories
-        w1, p_value_normality1 = shapiro(df[df['group'] == group_categories[0]][metric])
-        w2, p_value_normality2 = shapiro(df[df['group'] == group_categories[1]][metric])
-        print(f"Shapiro-Wilk test for normality ({group_categories[0]}): W={w1:.3f}, p-value={p_value_normality1:.3f}")
-        print(f"Shapiro-Wilk test for normality ({group_categories[1]}): W={w2:.3f}, p-value={p_value_normality2:.3f}")
-        return p_value_normality1 >= 0.05 and p_value_normality2 >= 0.05
+        stat1, p_value1 = shapiro(group1_data)
+        stat2, p_value2 = shapiro(group2_data)
+
+        # Assuming alpha = 0.05 for significance level
+        if p_value1 > 0.05 and p_value2 > 0.05:
+            print("Normality assumption is met for both groups.")
+            return True
+        else:
+            if p_value1 <= 0.05:
+                print(f"Normality assumption is not met for {group1}.")
+            if p_value2 <= 0.05:
+                print(f"Normality assumption is not met for {group2}.")
+            return False
 
     def calculate_contingency_table(self, df_fp, comparison_type):
         data = {'group': [], 'has_dip': []}
@@ -352,39 +237,7 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.xlabel('Group')
         plt.show()
 
-    def repeated_measures_anova(self, df_fp, metric):
-        data = []
-        for index, row in df_fp.iterrows():
-            participant_id = row['participant_id']
-            condition = row['file_name'].split('_')[1]
-            aggregated_condition = ''.join([i for i in condition if not i.isdigit()])
-            data.append({
-                'participant_id': participant_id,
-                'condition': aggregated_condition,
-                metric: row[metric]
-            })
-
-        df = pd.DataFrame(data).dropna()
-
-        # Group by participant_id and condition and average the metric values
-        df_grouped = df.groupby(['participant_id', 'condition'], as_index=False).mean()
-
-        # Pivot the DataFrame to have conditions as columns
-        df_wide = df_grouped.pivot(index='participant_id', columns='condition', values=metric).dropna()
-
-        if df_wide.empty:
-            print(f"No data available for repeated measures ANOVA on {metric}")
-            return
-
-        # Melt the DataFrame back to long form for AnovaRM
-        df_long = df_wide.reset_index().melt(id_vars=['participant_id'], var_name='condition', value_name=metric)
-
-        aovrm = AnovaRM(df_long, depvar=metric, subject='participant_id', within=['condition'])
-        res = aovrm.fit()
-        print(f"Repeated Measures ANOVA for {metric}:")
-        print(res)
-
-    def paired_ttest(self, df, metric, comparison_type):
+    def paired_ttest_with_averages(self, df, metric, comparison_type):
         data = []
 
         # Sort into two groups based on comparison type
@@ -448,7 +301,7 @@ class StatBounceAnalyser(BounceAnalyser):
 
                 if metric in row:
                     data.append({
-                        'file_name': file_name,
+                        'participant_id': row['participant_id'],  # Using participant_id from the column
                         'group': group,
                         metric: row[metric]
                     })
@@ -458,7 +311,6 @@ class StatBounceAnalyser(BounceAnalyser):
             return
 
         df = pd.DataFrame(data)
-        # print(df)
 
         comparison_dict = {
             'b_nb_all': ('bounce', 'nobounce'),
@@ -476,21 +328,177 @@ class StatBounceAnalyser(BounceAnalyser):
 
         group1, group2 = comparison_dict[comparison_type]
 
-        df_filtered = df[(df['group'] == group1) | (df['group'] == group2)].copy()
-        df_filtered['group'] = df_filtered['group'].astype('category')
+        # Calculate the mean for each participant in each group
+        df_grouped = df.groupby(['participant_id', 'group'])[metric].mean().unstack()
+        print(df_grouped)
 
-        # Remove missing or non-numeric values
-        df_filtered = df_filtered.dropna(subset=[metric])
-        df_filtered = df_filtered[pd.to_numeric(df_filtered[metric], errors='coerce').notnull()]
+        if group1 not in df_grouped.columns or group2 not in df_grouped.columns:
+            print(f"Missing data for one or both groups: {group1}, {group2}")
+            return
+
+        # Ensure both groups have the same participants
+        df_grouped.dropna(subset=[group1, group2], inplace=True)
 
         # Check assumptions
-        homogeneity_passed = self.check_homogeneity(df_filtered, metric)
-        normality_passed = self.check_normality(df_filtered, metric)
+        homogeneity_passed = self.check_homogeneity(df_grouped, group1, group2)
+        normality_passed = self.check_normality(df_grouped, group1, group2)
 
         if homogeneity_passed and normality_passed:
-            t_stat, p_value = stats.ttest_rel(df_filtered[df_filtered['group'] == group1][metric],
-                                              df_filtered[df_filtered['group'] == group2][metric])
+            # Perform paired t-test on the means
+            t_stat, p_value = stats.ttest_rel(df_grouped[group1], df_grouped[group2])
             print(f"Paired t-test results for {metric} comparing {group1} and {group2}:")
             print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
         else:
             print("Assumptions not met for paired t-test.")
+
+    def check_data(self, df, metric, comparison_type):
+        data = []
+        # Sort into two groups based on comparison type
+        for index, row in df.iterrows():
+            file_name = row['file_name']
+            parts = file_name.split('_')
+            if len(parts) >= 2:
+                group = parts[1].split('.')[0]
+                base_group = group[:-1]
+
+                if comparison_type == 'b_nb_all':
+                    if '70b' in base_group or '80b' in base_group or 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                elif comparison_type == 'b_nb_fast':
+                    if 'fastb' in base_group:
+                        group = 'fastb'
+                    elif 'fastnb' in base_group:
+                        group = 'fastnb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_slow':
+                    if 'slowb' in base_group:
+                        group = 'slowb'
+                    elif 'slownb' in base_group:
+                        group = 'slownb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_70':
+                    if '70b' in base_group:
+                        group = 'bounce70b'
+                    elif '70nb' in base_group:
+                        group = 'bounce70nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_80':
+                    if '80b' in base_group:
+                        group = 'bounce80b'
+                    elif '80nb' in base_group:
+                        group = 'bounce80nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_weight':
+                    if '70b' in base_group or '80b' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_speed':
+                    if 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                else:
+                    print(f"Invalid comparison type: {comparison_type}")
+                    return
+
+                if metric in row:
+                    data.append({
+                        'participant_id': row['participant_id'],
+                        'group': group,
+                        metric: row[metric]
+                    })
+
+        if not data:
+            print("No data found to prepare for paired t-test")
+            return
+
+        df_grouped = pd.DataFrame(data).groupby(['participant_id', 'group'])[metric].mean().unstack()
+
+        # Define group1 and group2 based on comparison type
+        comparison_dict = {
+            'b_nb_all': ('bounce', 'nobounce'),
+            'b_nb_fast': ('fastb', 'fastnb'),
+            'b_nb_slow': ('slowb', 'slownb'),
+            'b_nb_70': ('bounce70b', 'bounce70nb'),
+            'b_nb_80': ('bounce80b', 'bounce80nb'),
+            'b_nb_weight': ('bounce', 'nobounce'),
+            'b_nb_speed': ('bounce', 'nobounce')
+        }
+
+        if comparison_type not in comparison_dict:
+            print(f"Invalid comparison type: {comparison_type}")
+            return
+
+        group1, group2 = comparison_dict[comparison_type]
+
+        if group1 not in df_grouped.columns or group2 not in df_grouped.columns:
+            print(f"Missing data for one or both groups: {group1}, {group2}")
+            return
+
+        # Ensure both groups have the same participants
+        df_grouped.dropna(subset=[group1, group2], inplace=True)
+
+        # Plot distributions
+        self.plot_distributions(df_grouped, group1, group2)
+
+        # Check for outliers
+        self.check_for_outliers(df_grouped, group1, group2)
+
+    def plot_distributions(self, df_grouped, group1, group2):
+        """
+        Plot histograms and Q-Q plots for two groups to visually inspect distribution and normality.
+        """
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+        # Histogram for group1
+        sns.histplot(df_grouped[group1], kde=True, ax=axes[0, 0])
+        axes[0, 0].set_title(f'Histogram of {group1}')
+
+        # Histogram for group2
+        sns.histplot(df_grouped[group2], kde=True, ax=axes[0, 1])
+        axes[0, 1].set_title(f'Histogram of {group2}')
+
+        # Q-Q plot for group1
+        probplot(df_grouped[group1], dist="norm", plot=axes[1, 0])
+        axes[1, 0].set_title(f'Q-Q Plot of {group1}')
+
+        # Q-Q plot for group2
+        probplot(df_grouped[group2], dist="norm", plot=axes[1, 1])
+        axes[1, 1].set_title(f'Q-Q Plot of {group2}')
+
+        plt.tight_layout()
+        plt.show()
+
+    def check_for_outliers(self, df_grouped, group1, group2):
+        """
+        Identify and print outliers in both groups using the IQR method.
+        """
+        def detect_outliers(data):
+            q1 = data.quantile(0.025)
+            q3 = data.quantile(0.975)
+            iqr = q3 - q1
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
+            return data[(data < lower_bound) | (data > upper_bound)]
+
+        outliers_group1 = detect_outliers(df_grouped[group1])
+        outliers_group2 = detect_outliers(df_grouped[group2])
+
+        print(f"Outliers in {group1}:")
+        print(outliers_group1)
+        print(f"Outliers in {group2}:")
+        print(outliers_group2)
+
+
+
