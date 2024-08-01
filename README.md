@@ -105,7 +105,7 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
   - [x] Bland–Altman plot for comparing Gymaware and Forceplate data
   - [x] Display Correlation of Validation Data
   - [x] Limit of Agreements --> especially time, if data is usable
-  - [ ] ~~Edit Gymaware data to match Forceplate data in case needed~~
+  - [x] ~~Edit Gymaware data to match Forceplate data in case needed~~
 - [x] **Implement method in bounce_analyser.py to calculate Force relative to Bodyweight (~~and Load~~)**
 - [ ] **Statistical Analysis:**
   - [ ] Statistical Analysis similar to the one in the paper
@@ -116,8 +116,8 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
       - [x] Time to Peak Power
       - [x] Peak Velocity
       - [x] Time to Peak Velocity
-    - [ ] Test for Normality
-    - [ ] Test for Homogeneity of Variance
+    - [x] Test for Normality
+    - [x] Test for Homogeneity of Variance
     - [ ] Perform paired t-test for bounce vs nobounce including gender differentiation and overall
       - [ ] 70%
       - [ ] 80%
