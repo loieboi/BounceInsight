@@ -125,7 +125,7 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
       - [x] fast
       - [x] weight combined
       - [x] speed combined
-      - [ ] **_Do the same thing for the gender differentiation_**
+      - [x] **_Do the same thing for the gender differentiation_**
     - [x] twoway split-plot repeated analyses of variance (ANOVA) 
       - [x] [withinsubject factor: lowering cue (slow, medium, and fast)] x [betweensubject factor: condition (BPT and BPTbounce)]
     - [x] Paired t-tests with Bonferroni post hoc correction when ANOVA significant

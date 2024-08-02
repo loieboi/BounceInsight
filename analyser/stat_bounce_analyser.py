@@ -21,17 +21,9 @@ class StatBounceAnalyser(BounceAnalyser):
         self.metadata_table = pd.read_excel(metadata_table_path)
 
     def analyze_statistics(self, analysis_type, comparison_type=None, metric=None, metric1=None, metric2=None,
-                           bounce_type=None, df_type=None):
-        df_fp, df_gym = self.load_data()
-        for index, row in df_fp.iterrows():
-            participant_id = row['participant_id']
-            file_name = row['file_name']
-            self.update_metadata(self.metadata_table, participant_id, file_name)
+                           bounce_type=None, df_type=None, gender=None):
 
-        for index, row in df_gym.iterrows():
-            participant_id = row['participant_id']
-            file_name = row['file_name']
-            self.update_metadata(self.metadata_table, participant_id, file_name)
+        df_fp, df_gym = self.load_data(gender)
 
         # Perform the requested analysis
         if analysis_type == 'summary':
@@ -79,9 +71,53 @@ class StatBounceAnalyser(BounceAnalyser):
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
-    def load_data(self):
+    def load_data(self, gender=None):
+        # Load the data
         df_fp = pd.read_csv('files/forceplate_data.csv', dtype={'participant_id': str})
         df_gym = pd.read_csv('files/gymaware_data.csv', dtype={'participant_id': str})
+        if gender is not None:
+            # Initialize dictionaries to hold metadata for each participant
+            fp_metadata_dict = {}
+            gym_metadata_dict = {}
+
+            # Collect metadata for each participant in df_fp
+            for index, row in df_fp.iterrows():
+                participant_id = row['participant_id']
+                file_name = row['file_name']
+                # Update metadata for the current row
+                self.update_metadata(self.metadata_table, participant_id, file_name)
+                # Store the metadata dictionary for this participant
+                metadata_copy = self.metadata.copy()
+                fp_metadata_dict[participant_id] = metadata_copy
+
+            # Convert collected metadata dictionary to DataFrame
+            metadata_fp_df = pd.DataFrame.from_dict(fp_metadata_dict, orient='index').reset_index().rename(
+                columns={'index': 'participant_id'})
+
+            # Collect metadata for each participant in df_gym
+            for index, row in df_gym.iterrows():
+                participant_id = row['participant_id']
+                file_name = row['file_name']
+                # Update metadata for the current row
+                self.update_metadata(self.metadata_table, participant_id, file_name)
+                # Store the metadata dictionary for this participant
+                metadata_copy = self.metadata.copy()
+                gym_metadata_dict[participant_id] = metadata_copy
+
+            # Convert collected metadata dictionary to DataFrame
+            metadata_gym_df = pd.DataFrame.from_dict(gym_metadata_dict, orient='index').reset_index().rename(
+                columns={'index': 'participant_id'})
+
+            # Merge metadata with the original dataframes on 'participant_id'
+            df_fp = df_fp.merge(metadata_fp_df, on='participant_id', how='left')
+            df_gym = df_gym.merge(metadata_gym_df, on='participant_id', how='left')
+
+            # Filter by gender if specified
+            if gender in ['m', 'f']:
+                df_fp = df_fp[df_fp['gender'] == gender]
+                df_gym = df_gym[df_gym['gender'] == gender]
+
+        print(f'Gender: {gender}, Length of df_fp: {len(df_fp)}, Length of df_gym:{len(df_gym)}')
         return df_fp, df_gym
 
     def summary_statistics_by_type(self, df_fp, bounce_type):
