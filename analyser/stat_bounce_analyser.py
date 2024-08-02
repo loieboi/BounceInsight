@@ -557,7 +557,9 @@ class StatBounceAnalyser(BounceAnalyser):
             print(f"Paired t-test results for {metric} comparing {group1} and {group2}:")
             print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}, Cohen's d: {cohen_d:.4f}")
         else:
-            print("Assumptions not met for paired t-test.")
+            print("Assumptions not met for paired t-test. Using Wilcoxon signed-rank test instead.")
+            result = stats.wilcoxon(df_grouped[group1], df_grouped[group2])
+            print(f"Wilcoxon Signed-Rank Test for {metric}: statistic = {result.statistic}, p-value = {result.pvalue}")
 
     def check_data(self, df, metric, comparison_type):
         data = []
