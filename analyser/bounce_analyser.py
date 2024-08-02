@@ -66,6 +66,8 @@ class BounceAnalyser:
                 f_con = self.find_f_con(p_o_i, bounce_file_id,
                                         bounce_files[bounce_file_id]['combined_force'])
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
+                f_turning_rel, f_con_rel = self.calculate_relative_force(f_turning, f_con,
+                                                                         self.metadata['bodyweight'] * 9.81)
 
                 if verbose:
                     print(
@@ -80,6 +82,8 @@ class BounceAnalyser:
                 f_turning = None
                 has_dip = False
                 f_con = None
+                f_turning_rel = None
+                f_con_rel = None
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
             # --- Plot Points of Interest in the correct graph (index is zeroed, so not applicable to raw files,
@@ -95,7 +99,7 @@ class BounceAnalyser:
 
             # --- Update CSV File with validation data for validator.py file ---
             self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, f_turning, f_con, has_dip,
-                                       verbose=verbose)
+                                       f_turning_rel, f_con_rel, verbose=verbose)
 
             # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
@@ -401,22 +405,23 @@ class BounceAnalyser:
         return f_con
 
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, f_turning, f_con, has_dip,
-                              verbose=False):
+                              f_turning_rel, f_con_rel, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
         analyser_folder_path = os.path.join(current_dir, 'files')
         validation_csv_path = os.path.join(validation_folder_path, 'validation_forceplate.csv')
         forceplate_data_csv = os.path.join(analyser_folder_path, 'forceplate_data.csv')
+
         if os.path.exists(validation_csv_path):
             df = pd.read_csv(validation_csv_path, dtype={'participant_id': str})
         else:
-            df = pd.DataFrame(columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'F_turning',
-                                       'F_con', 'has_dip'])
+            df = pd.DataFrame(
+                columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'F_turning', 'F_con', 'has_dip',
+                         'F_turning_rel', 'F_con_rel'])
 
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
 
-        # used strings since numbers didn't seem to work
         if 't_ecc' in df.columns:
             df['t_ecc'] = df['t_ecc'].astype(str)
         if 't_con' in df.columns:
@@ -427,10 +432,13 @@ class BounceAnalyser:
             df['F_turning'] = df['F_turning'].astype(str)
         if 'F_con' in df.columns:
             df['F_con'] = df['F_con'].astype(str)
-            if 'has_dip' in df.columns:
-                df['has_dip'] = df['has_dip'].astype(str)
+        if 'has_dip' in df.columns:
+            df['has_dip'] = df['has_dip'].astype(str)
+        if 'F_turning_rel' in df.columns:
+            df['F_turning_rel'] = df['F_turning_rel'].astype(str)
+        if 'F_con_rel' in df.columns:
+            df['F_con_rel'] = df['F_con_rel'].astype(str)
 
-        # Duplicate check and overwrite if there is already a row with the same file_name and participant_id
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
         if df[mask].empty:
@@ -442,17 +450,20 @@ class BounceAnalyser:
                 't_total': str(t_total),
                 'F_turning': str(f_turning),
                 'F_con': str(f_con),
-                'has_dip': str(has_dip)
+                'has_dip': str(has_dip),
+                'F_turning_rel': str(f_turning_rel),
+                'F_con_rel': str(f_con_rel)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
-            # Update the t_ecc, t_con, t_total, and F_turning columns for that row with the new data
             df.loc[mask, 't_ecc'] = str(t_ecc)
             df.loc[mask, 't_con'] = str(t_con)
             df.loc[mask, 't_total'] = str(t_total)
             df.loc[mask, 'F_turning'] = str(f_turning)
             df.loc[mask, 'F_con'] = str(f_con)
             df.loc[mask, 'has_dip'] = str(has_dip)
+            df.loc[mask, 'F_turning_rel'] = str(f_turning_rel)
+            df.loc[mask, 'F_con_rel'] = str(f_con_rel)
 
         df.to_csv(validation_csv_path, index=False)
         df.to_csv(forceplate_data_csv, index=False)
@@ -560,28 +571,8 @@ class BounceAnalyser:
         else:
             pass
 
-    def calculate_relative_force(self, p_o_i, bounce_load_table):
-        results = []
+    def calculate_relative_force(self, f_turning, f_con, baseline_weight):
+        f_turning_relative = f_turning / baseline_weight if f_turning else None
+        f_con_relative = f_con / baseline_weight if f_con else None
 
-        for file_name, data in p_o_i.items():
-            participant_id = file_name.split('_')[0]
-            file_name, file_ext = os.path.splitext(file_name)
-            self.update_metadata(bounce_load_table, participant_id, file_name, verbose=False)
-            baseline_weight = (self.metadata['bodyweight']) * 9.81  # Check if load is also needed
-
-            f_turning = data['F_turning'] if 'F_turning' in data else None
-            f_con = data['F_con'] if 'F_con' in data else None
-
-            f_turning_relative = f_turning / baseline_weight if f_turning else None
-            f_con_relative = f_con / baseline_weight if f_con else None
-
-            results.append({
-                'file_name': file_name,
-                'participant_id': participant_id,
-                'F_turning_relative': f_turning_relative,
-                'F_con_relative': f_con_relative,
-                'baseline_weight': baseline_weight
-            })
-
-        relative_force_df = pd.DataFrame(results)
-        return relative_force_df
+        return f_turning_relative, f_con_relative

@@ -9,7 +9,7 @@ Short comments on why data was removed and excluded from validation and analysis
 24_fastb3:          Invalid --> excluded due to unsatisfactory execution
 24_fastnb2:         Invalid --> excluded due to unsatisfactory execution
 36_fastnb4:         No FP data --> only on Gymaware Fata available but no info in protocol --> Check for exclusion
-38_fastnb1:          No FP Data --> only Gymaware Data available
+38_fastnb1:         No FP Data --> only Gymaware Data available
 
-- Session 2 of ID 12: 	Strange Baseline reading --> Offset in FP Data should be respected
+Session 2 of ID 12: 	Strange Baseline reading --> Offset in FP Data should be respected
 14_all:                 Check for Invalidity --> excluded due to unsatisfactory execution and un-wellbeing of participant

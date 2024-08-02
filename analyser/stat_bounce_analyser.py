@@ -105,9 +105,6 @@ class StatBounceAnalyser(BounceAnalyser):
         return print(f'Not implemented yet')
 
     def check_homogeneity(self, df_grouped, group1, group2):
-        """
-        Check the homogeneity of variances between two groups using Levene's test.
-        """
         group1_data = df_grouped[group1].dropna()
         group2_data = df_grouped[group2].dropna()
 
@@ -126,9 +123,6 @@ class StatBounceAnalyser(BounceAnalyser):
             return False
 
     def check_normality(self, df_grouped, group1, group2):
-        """
-        Check the normality of data distribution in each group using the Shapiro-Wilk test.
-        """
         group1_data = df_grouped[group1].dropna()
         group2_data = df_grouped[group2].dropna()
 
@@ -330,7 +324,7 @@ class StatBounceAnalyser(BounceAnalyser):
 
         # Calculate the mean for each participant in each group
         df_grouped = df.groupby(['participant_id', 'group'])[metric].mean().unstack()
-        print(df_grouped)
+        print(df_grouped.describe())
 
         if group1 not in df_grouped.columns or group2 not in df_grouped.columns:
             print(f"Missing data for one or both groups: {group1}, {group2}")
@@ -424,6 +418,7 @@ class StatBounceAnalyser(BounceAnalyser):
             return
 
         df_grouped = pd.DataFrame(data).groupby(['participant_id', 'group'])[metric].mean().unstack()
+        print(df_grouped)
 
         # Define group1 and group2 based on comparison type
         comparison_dict = {
@@ -456,9 +451,6 @@ class StatBounceAnalyser(BounceAnalyser):
         self.check_for_outliers(df_grouped, group1, group2)
 
     def plot_distributions(self, df_grouped, group1, group2):
-        """
-        Plot histograms and Q-Q plots for two groups to visually inspect distribution and normality.
-        """
         fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
         # Histogram for group1
@@ -481,12 +473,9 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.show()
 
     def check_for_outliers(self, df_grouped, group1, group2):
-        """
-        Identify and print outliers in both groups using the IQR method.
-        """
         def detect_outliers(data):
-            q1 = data.quantile(0.025)
-            q3 = data.quantile(0.975)
+            q1 = data.quantile(0.25)
+            q3 = data.quantile(0.75)
             iqr = q3 - q1
             lower_bound = q1 - 1.5 * iqr
             upper_bound = q3 + 1.5 * iqr
@@ -499,6 +488,3 @@ class StatBounceAnalyser(BounceAnalyser):
         print(outliers_group1)
         print(f"Outliers in {group2}:")
         print(outliers_group2)
-
-
-
