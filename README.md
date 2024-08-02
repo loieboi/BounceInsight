@@ -118,17 +118,18 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
       - [x] Time to Peak Velocity
     - [x] Test for Normality
     - [x] Test for Homogeneity of Variance
-    - [ ] Perform paired t-test for bounce vs nobounce including gender differentiation and overall
-      - [ ] 70%
-      - [ ] 80%
-      - [ ] slow
-      - [ ] fast
-      - [ ] weight combined
-      - [ ] speed combined
-    - [ ] twoway split-plot repeated analyses of variance (ANOVA) 
-      - [ ] [withinsubject factor: lowering cue (slow, medium, and fast)] x [betweensubject factor: condition (BPT and BPTbounce)]
+    - [x] Program paired t-test for bounce vs nobounce ~~including gender differentiation and~~ overall for all available metric
+      - [x] 70%
+      - [x] 80%
+      - [x] slow
+      - [x] fast
+      - [x] weight combined
+      - [x] speed combined
+      - [ ] **_Do the same thing for the gender differentiation_**
+    - [x] twoway split-plot repeated analyses of variance (ANOVA) 
+      - [x] [withinsubject factor: lowering cue (slow, medium, and fast)] x [betweensubject factor: condition (BPT and BPTbounce)]
     - [ ] Paired t-tests with Bonferroni post hoc correction
-    - [ ] Cohen’s d and interpreted according to the following scale: 0.0–0.2 (trivial), 0.2–0.5 (small), 0.5–0.8 (moderate), and >0.8 (large)
+    - [x] Cohen’s d and interpreted according to the following scale: 0.0–0.2 (trivial), 0.2–0.5 (small), 0.5–0.8 (moderate), and >0.8 (large)
   - [ ] Correlogram for all metrics
   - [x] Change naming from gymaware_data F_ecc to turning_force
   - [x] Remove false and wrong Data from edited files

@@ -46,10 +46,12 @@ class StatBounceAnalyser(BounceAnalyser):
             else:
                 print("For correlation analysis, please specify both metric1 and metric2.")
         elif analysis_type == 'anova':
-            if metric and comparison_type:
-                self.calculate_anova(df_fp, metric, comparison_type)
+            if metric and df_type == 'gym':
+                self.calculate_anova(df_gym, metric)
+            elif metric and df_type == 'fp':
+                self.calculate_anova(df_fp, metric)
             else:
-                print("For ANOVA analysis, please specify both metric and comparison_type.")
+                print("For ANOVA analysis, please specify both metric and comparison_type as well as a df type.")
         elif analysis_type == 'chi2':
             if comparison_type:
                 self.calculate_contingency_table(df_fp, comparison_type)
@@ -101,8 +103,62 @@ class StatBounceAnalyser(BounceAnalyser):
     def calculate_cor(self, df_fp, metric1, metric2):
         return print(f'Not implemented yet')
 
-    def calculate_anova(self, df_fp, metric, comparison_type):
-        return print(f'Not implemented yet')
+    def calculate_anova(self, df, metric):
+        data = []
+
+        for index, row in df.iterrows():
+            file_name = row['file_name']
+            parts = file_name.split('_')
+            if len(parts) >= 2:
+                base_group = parts[1].split('.')[0]
+
+                if 'slowb' in base_group:
+                    condition = 'bounce'
+                    cue = 'slow'
+                elif 'fastb' in base_group:
+                    condition = 'bounce'
+                    cue = 'fast'
+                elif 'slownb' in base_group:
+                    condition = 'nobounce'
+                    cue = 'slow'
+                elif 'fastnb' in base_group:
+                    condition = 'nobounce'
+                    cue = 'fast'
+
+                else:
+                    continue
+
+                if metric in row:
+                    data.append({
+                        'participant_id': row['participant_id'],
+                        'condition': condition,
+                        'cue': cue,
+                        metric: row[metric]
+                    })
+
+        if not data:
+            print("No data found to perform ANOVA")
+            return
+
+        df_anova = pd.DataFrame(data)
+
+        df_anova_pivot = df_anova.pivot_table(index='participant_id', columns=['condition', 'cue'], values=metric,
+                                              aggfunc='mean')
+
+        df_long = df_anova_pivot.stack(level=['condition', 'cue'], future_stack=True).reset_index()
+        df_long.columns = ['participant_id', 'condition', 'cue', metric]
+
+        try:
+            anova_model = AnovaRM(df_long, depvar=metric, subject='participant_id', within=['cue', 'condition'],
+                                  aggregate_func='mean')
+            anova_results = anova_model.fit()
+            print(anova_results)
+        except Exception as e:
+            print(f"Error in performing ANOVA: {e}")
+
+        sns.boxplot(x='cue', y=metric, hue='condition', data=df_long)
+        plt.title(f'Two-Way Split-Plot ANOVA results for {metric}')
+        plt.show()
 
     def check_homogeneity(self, df_grouped, group1, group2):
         group1_data = df_grouped[group1].dropna()
@@ -340,8 +396,10 @@ class StatBounceAnalyser(BounceAnalyser):
         if homogeneity_passed and normality_passed:
             # Perform paired t-test on the means
             t_stat, p_value = stats.ttest_rel(df_grouped[group1], df_grouped[group2])
+            cohen_d = (df_grouped[group1].mean() - df_grouped[group2].mean()) / np.std(
+                df_grouped[group1] - df_grouped[group2])
             print(f"Paired t-test results for {metric} comparing {group1} and {group2}:")
-            print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+            print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}, Cohen's d: {cohen_d:.4f}")
         else:
             print("Assumptions not met for paired t-test.")
 

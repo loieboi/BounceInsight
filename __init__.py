@@ -99,13 +99,8 @@ class BounceInsight:
         metadata_table_path = os.path.abspath(os.path.join(current_dir, 'files/participant_metadata_reference.xlsx'))
         stat_analyser = StatBounceAnalyser(self.metadata, metadata_table_path)
 
-        if analysis_type == 'anova':
-            stat_analyser.analyze_statistics(analysis_type=analysis_type,
-                                             metric=metric, comparison_type=comparison_type)
-        elif analysis_type == 'chi2':
+        if analysis_type == 'chi2':
             stat_analyser.analyze_statistics(analysis_type=analysis_type, comparison_type=comparison_type)
-        elif analysis_type == 'regression':
-            stat_analyser.analyze_statistics(analysis_type=analysis_type, metric=metric)
         elif analysis_type == 'cor':
             stat_analyser.analyze_statistics(analysis_type=analysis_type, metric1=metric1, metric2=metric2)
         elif analysis_type == 'summary':
@@ -113,5 +108,7 @@ class BounceInsight:
         elif analysis_type == 'ttest' or analysis_type == 'check_data':
             stat_analyser.analyze_statistics(analysis_type=analysis_type, metric=metric,
                                              comparison_type=comparison_type, df_type=df_type)
+        elif analysis_type == 'anova':
+            stat_analyser.analyze_statistics(analysis_type=analysis_type, metric=metric, df_type=df_type)
         else:
             stat_analyser.analyze_statistics(analysis_type=analysis_type)
