@@ -128,7 +128,7 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
       - [ ] **_Do the same thing for the gender differentiation_**
     - [x] twoway split-plot repeated analyses of variance (ANOVA) 
       - [x] [withinsubject factor: lowering cue (slow, medium, and fast)] x [betweensubject factor: condition (BPT and BPTbounce)]
-    - [ ] Paired t-tests with Bonferroni post hoc correction
+    - [x] Paired t-tests with Bonferroni post hoc correction when ANOVA significant
     - [x] Cohen’s d and interpreted according to the following scale: 0.0–0.2 (trivial), 0.2–0.5 (small), 0.5–0.8 (moderate), and >0.8 (large)
   - [ ] Correlogram for all metrics
   - [x] Change naming from gymaware_data F_ecc to turning_force

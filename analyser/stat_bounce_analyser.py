@@ -153,12 +153,39 @@ class StatBounceAnalyser(BounceAnalyser):
                                   aggregate_func='mean')
             anova_results = anova_model.fit()
             print(anova_results)
+
+            # Check for significant effects to perform paired t-tests
+            if anova_results.anova_table['Pr > F']['cue'] < 0.05:
+                print("Performing post-hoc tests for 'cue'")
+                self.post_hoc_tests(df_long, 'cue', metric)
+
+            if anova_results.anova_table['Pr > F']['condition'] < 0.05:
+                print("Performing post-hoc tests for 'condition'")
+                self.post_hoc_tests(df_long, 'condition', metric)
+
         except Exception as e:
             print(f"Error in performing ANOVA: {e}")
 
         sns.boxplot(x='cue', y=metric, hue='condition', data=df_long)
         plt.title(f'Two-Way Split-Plot ANOVA results for {metric}')
         plt.show()
+
+    def post_hoc_tests(self, df, factor, metric):
+        levels = df[factor].unique()
+        comparisons = len(levels) * (len(levels) - 1) / 2
+        alpha = 0.05 / comparisons  # Bonferroni correction
+
+        for i in range(len(levels)):
+            for j in range(i + 1, len(levels)):
+                group1 = df[df[factor] == levels[i]]
+                group2 = df[df[factor] == levels[j]]
+                if len(group1) > 1 and len(group2) > 1:
+                    t_stat, p_val = stats.ttest_rel(group1[metric].dropna(), group2[metric].dropna())
+                    significant = p_val < alpha
+                    pooled_sd = np.sqrt((group1[metric].std() ** 2 + group2[metric].std() ** 2) / 2)
+                    cohen_d = (group1[metric].mean() - group2[metric].mean()) / pooled_sd
+                    print(
+                        f'Comparison between {levels[i]} and {levels[j]}: t={t_stat:.3f}, p={p_val:.4f}, significant={significant}, Cohen\'s d={cohen_d:.3f}')
 
     def check_homogeneity(self, df_grouped, group1, group2):
         group1_data = df_grouped[group1].dropna()
