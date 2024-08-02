@@ -101,11 +101,9 @@ class BounceInsight:
 
         if analysis_type == 'chi2':
             stat_analyser.analyze_statistics(analysis_type=analysis_type, comparison_type=comparison_type)
-        elif analysis_type == 'cor':
-            stat_analyser.analyze_statistics(analysis_type=analysis_type, metric1=metric1, metric2=metric2)
         elif analysis_type == 'summary':
             stat_analyser.analyze_statistics(analysis_type=analysis_type, bounce_type=bounce_type)
-        elif analysis_type == 'ttest' or analysis_type == 'check_data':
+        elif analysis_type == 'ttest' or analysis_type == 'check_data' or analysis_type == 'cor':
             stat_analyser.analyze_statistics(analysis_type=analysis_type, metric=metric,
                                              comparison_type=comparison_type, df_type=df_type)
         elif analysis_type == 'anova':

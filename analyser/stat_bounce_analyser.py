@@ -41,10 +41,15 @@ class StatBounceAnalyser(BounceAnalyser):
             else:
                 self.summary_statistics_by_type(df_fp, bounce_type)
         elif analysis_type == 'cor':
-            if metric1 and metric2:
-                self.calculate_cor(df_fp, metric1, metric2)
+            wip = True
+            if wip:
+                print("Correlation analysis is a work in progress.")
+            elif metric and comparison_type and df_type == 'gym':
+                self.calculate_cor(df_gym, metric, comparison_type)
+            elif metric and comparison_type and df_type == 'fp':
+                self.calculate_cor(df_fp, metric, comparison_type)
             else:
-                print("For correlation analysis, please specify both metric1 and metric2.")
+                print("For correlation analysis, please specify both metric and comparison_type as well as a df type.")
         elif analysis_type == 'anova':
             if metric and df_type == 'gym':
                 self.calculate_anova(df_gym, metric)
@@ -100,8 +105,96 @@ class StatBounceAnalyser(BounceAnalyser):
             else:
                 print(f"{metric}; No data available")
 
-    def calculate_cor(self, df_fp, metric1, metric2):
-        return print(f'Not implemented yet')
+    def calculate_cor(self, df, metric, comparison_type):
+        data = []
+
+        # Sort into two groups based on comparison type
+        for index, row in df.iterrows():
+            file_name = row['file_name']
+            parts = file_name.split('_')
+            if len(parts) >= 2:
+                group = parts[1].split('.')[0]
+                base_group = group[:-1]
+
+                if comparison_type == 'b_nb_all':
+                    if '70b' in base_group or '80b' in base_group or 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group or 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                elif comparison_type == 'b_nb_fast':
+                    if 'fastb' in base_group:
+                        group = 'fastb'
+                    elif 'fastnb' in base_group:
+                        group = 'fastnb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_slow':
+                    if 'slowb' in base_group:
+                        group = 'slowb'
+                    elif 'slownb' in base_group:
+                        group = 'slownb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_70':
+                    if '70b' in base_group:
+                        group = 'bounce70b'
+                    elif '70nb' in base_group:
+                        group = 'bounce70nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_80':
+                    if '80b' in base_group:
+                        group = 'bounce80b'
+                    elif '80nb' in base_group:
+                        group = 'bounce80nb'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_weight':
+                    if '70b' in base_group or '80b' in base_group:
+                        group = 'bounce'
+                    elif '70nb' in base_group or '80nb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                elif comparison_type == 'b_nb_speed':
+                    if 'slowb' in base_group or 'fastb' in base_group:
+                        group = 'bounce'
+                    elif 'slownb' in base_group or 'fastnb' in base_group:
+                        group = 'nobounce'
+                    else:
+                        continue
+                else:
+                    print(f"Invalid comparison type: {comparison_type}")
+                    return
+
+                if metric in row:
+                    data.append({
+                        'participant_id': row['participant_id'],  # Using participant_id from the column
+                        'group': group,
+                        metric: row[metric]
+                    })
+
+        if not data:
+            print("No data found to prepare for paired t-test")
+            return
+
+        df_grouped = pd.DataFrame(data)
+
+        if df_grouped.empty:
+            print("No data available for correlation analysis.")
+            return
+
+            # Group data by 'group' and calculate correlation matrix for the metrics
+        grouped_data = df_grouped.groupby('group').apply(lambda x: x[metric].corr(x['group']))
+        print(grouped_data)  # This line is conceptual; modify according to what data you want to correlate.
+
+        # Generate correlogram
+        correlation_matrix = df_grouped.corr()
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f",
+                    linewidths=.5, cbar_kws={"shrink": .75})
+        plt.title('Correlogram of ' + metric)
+        plt.show()
 
     def calculate_anova(self, df, metric):
         data = []
