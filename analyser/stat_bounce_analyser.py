@@ -436,11 +436,17 @@ class StatBounceAnalyser(BounceAnalyser):
         chi2, p, dof, expected = chi2_contingency(contingency_table)
         print(f"Chi-Square Test:\nChi2: {chi2}, p-value: {p}, Degrees of Freedom: {dof}")
 
-        plt.figure(figsize=(10, 6))
-        sns.barplot(x='group', y='has_dip', data=df.groupby('group')['has_dip'].mean().reset_index())
-        plt.title('Proportion of Dips in Bounce vs. No Bounce')
-        plt.ylabel('Proportion of Dips')
+        # Reorder the 'has_dip' to make 'True' come before 'False'
+        if 'True' in contingency_table.columns and 'False' in contingency_table.columns:
+            contingency_table = contingency_table[['True', 'False']]
+
+        # Plot absolute values with reversed order
+        ax = contingency_table.plot(kind='bar', stacked=True, color=['green', 'red'], figsize=(10, 6))
+        plt.title('Absolute Counts of Dips in Groups')
+        plt.ylabel('Count of Dips')
         plt.xlabel('Group')
+        plt.xticks(rotation=0)
+        ax.legend(title='Has Dip', labels=['True', 'False'], loc='upper right')
         plt.show()
 
     def paired_ttest_with_averages(self, df, metric, comparison_type):
