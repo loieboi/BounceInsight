@@ -107,8 +107,8 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
   - [x] Limit of Agreements --> especially time, if data is usable
   - [x] ~~Edit Gymaware data to match Forceplate data in case needed~~
 - [x] **Implement method in bounce_analyser.py to calculate Force relative to Bodyweight (~~and Load~~)**
-- [ ] **Statistical Analysis:**
-  - [ ] Statistical Analysis similar to the one in the paper
+- [x] **Statistical Analysis:**
+  - [x] Statistical Analysis similar to the one in the paper
     - [x] Extract Gymaware Data, like in the paper
       - [x] Average Power
       - [x] Average Velocity
@@ -130,7 +130,7 @@ The `BounceAnalyser` class provides functionalities for analyzing segmented boun
       - [x] [withinsubject factor: lowering cue (slow, medium, and fast)] x [betweensubject factor: condition (BPT and BPTbounce)]
     - [x] Paired t-tests with Bonferroni post hoc correction when ANOVA significant
     - [x] Cohen’s d and interpreted according to the following scale: 0.0–0.2 (trivial), 0.2–0.5 (small), 0.5–0.8 (moderate), and >0.8 (large)
-  - [ ] Correlogram for all metrics
+  - ~~[ ] Correlogram for all metrics~~
   - [x] Change naming from gymaware_data F_ecc to turning_force
   - [x] Remove false and wrong Data from edited files
 ## Acknowledgements
