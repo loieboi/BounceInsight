@@ -438,15 +438,15 @@ class StatBounceAnalyser(BounceAnalyser):
 
         # Reorder the 'has_dip' to make 'True' come before 'False'
         if 'True' in contingency_table.columns and 'False' in contingency_table.columns:
-            contingency_table = contingency_table[['True', 'False']]
+            contingency_table = contingency_table[['False', 'True']]
 
         # Plot absolute values with reversed order
-        ax = contingency_table.plot(kind='bar', stacked=True, color=['green', 'red'], figsize=(10, 6))
+        ax = contingency_table.plot(kind='bar', stacked=True, color=['red', 'green'], figsize=(10, 6))
         plt.title('Absolute Counts of Dips in Groups')
         plt.ylabel('Count of Dips')
         plt.xlabel('Group')
         plt.xticks(rotation=0)
-        ax.legend(title='Has Dip', labels=['True', 'False'], loc='upper right')
+        ax.legend(title='Has Dip', labels=['False', 'True'], loc='upper right')
         plt.show()
 
     def paired_ttest_with_averages(self, df, metric, comparison_type):
