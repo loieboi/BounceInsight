@@ -507,6 +507,20 @@ class StatBounceAnalyser(BounceAnalyser):
                         group = 'nobounce'
                     else:
                         continue
+                elif comparison_type == 'b_70_80':
+                    if '70b' in base_group:
+                        group = 'bounce70'
+                    elif '80b' in base_group:
+                        group = 'bounce80'
+                    else:
+                        continue
+                elif comparison_type == 'nb_70_80':
+                    if '70nb' in base_group:
+                        group = 'nobounce70'
+                    elif '80nb' in base_group:
+                        group = 'nobounce80'
+                    else:
+                        continue
                 else:
                     print(f"Invalid comparison type: {comparison_type}")
                     return
@@ -531,7 +545,9 @@ class StatBounceAnalyser(BounceAnalyser):
             'b_nb_70': ('bounce70b', 'bounce70nb'),
             'b_nb_80': ('bounce80b', 'bounce80nb'),
             'b_nb_weight': ('bounce', 'nobounce'),
-            'b_nb_speed': ('bounce', 'nobounce')
+            'b_nb_speed': ('bounce', 'nobounce'),
+            'b_70_80': ('bounce70', 'bounce80'),
+            'nb_70_80': ('nobounce70', 'nobounce80')
         }
 
         if comparison_type not in comparison_dict:
