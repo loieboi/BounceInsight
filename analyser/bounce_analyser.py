@@ -68,6 +68,9 @@ class BounceAnalyser:
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
                 f_turning_rel, f_con_rel = self.calculate_relative_force(f_turning, f_con,
                                                                          self.metadata['bodyweight'] * 9.81)
+                f_turning_rel_load, f_con_rel_load = self.calculate_relative_force(f_turning, f_con,
+                                                                                   (self.metadata['bodyweight'] +
+                                                                                    self.metadata['load']) * 9.81)
 
                 if verbose:
                     print(
@@ -84,6 +87,8 @@ class BounceAnalyser:
                 f_con = None
                 f_turning_rel = None
                 f_con_rel = None
+                f_turning_rel_load = None
+                f_con_rel_load = None
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
             # --- Plot Points of Interest in the correct graph (index is zeroed, so not applicable to raw files,
@@ -99,7 +104,7 @@ class BounceAnalyser:
 
             # --- Update CSV File with validation data for validator.py file ---
             self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, f_turning, f_con, has_dip,
-                                       f_turning_rel, f_con_rel, verbose=verbose)
+                                       f_turning_rel, f_con_rel, f_turning_rel_load, f_con_rel_load, verbose=verbose)
 
             # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
@@ -405,7 +410,7 @@ class BounceAnalyser:
         return f_con
 
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, f_turning, f_con, has_dip,
-                              f_turning_rel, f_con_rel, verbose=False):
+                              f_turning_rel, f_con_rel, f_turning_rel_load, f_con_rel_load, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
         analyser_folder_path = os.path.join(current_dir, 'files')
@@ -417,7 +422,7 @@ class BounceAnalyser:
         else:
             df = pd.DataFrame(
                 columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'F_turning', 'F_con', 'has_dip',
-                         'F_turning_rel', 'F_con_rel'])
+                         'F_turning_rel', 'F_con_rel', 'F_turning_rel_load', 'F_con_rel_load'])
 
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
@@ -438,6 +443,10 @@ class BounceAnalyser:
             df['F_turning_rel'] = df['F_turning_rel'].astype(str)
         if 'F_con_rel' in df.columns:
             df['F_con_rel'] = df['F_con_rel'].astype(str)
+        if 'F_turning_rel_load' in df.columns:
+            df['F_turning_rel_load'] = df['F_turning_rel_load'].astype(str)
+        if 'F_con_rel_load' in df.columns:
+            df['F_con_rel_load'] = df['F_con_rel_load'].astype(str)
 
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
@@ -452,7 +461,9 @@ class BounceAnalyser:
                 'F_con': str(f_con),
                 'has_dip': str(has_dip),
                 'F_turning_rel': str(f_turning_rel),
-                'F_con_rel': str(f_con_rel)
+                'F_con_rel': str(f_con_rel),
+                'F_turning_rel_load': str(f_turning_rel_load),
+                'F_con_rel_load': str(f_con_rel_load)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
@@ -464,6 +475,8 @@ class BounceAnalyser:
             df.loc[mask, 'has_dip'] = str(has_dip)
             df.loc[mask, 'F_turning_rel'] = str(f_turning_rel)
             df.loc[mask, 'F_con_rel'] = str(f_con_rel)
+            df.loc[mask, 'F_turning_rel_load'] = str(f_turning_rel_load)
+            df.loc[mask, 'F_con_rel_load'] = str(f_con_rel_load)
 
         df.to_csv(validation_csv_path, index=False)
         df.to_csv(forceplate_data_csv, index=False)
