@@ -3,14 +3,10 @@ import numpy as np
 import os
 import math
 from scipy import stats
-from scipy.stats import chi2_contingency, levene, shapiro, lognorm, probplot
+from scipy.stats import chi2_contingency, levene, shapiro, probplot, ttest_ind
 import matplotlib.pyplot as plt
 import seaborn as sns
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
 from statsmodels.stats.anova import AnovaRM
-from statsmodels.stats.oneway import anova_oneway
-from statsmodels.discrete.discrete_model import Logit
 
 from .bounce_analyser import BounceAnalyser
 
@@ -68,6 +64,8 @@ class StatBounceAnalyser(BounceAnalyser):
                 self.check_data(df_fp, metric, comparison_type)
             else:
                 print("For checking data please specify.")
+        elif analysis_type == 'participant':
+            self.participant_analysis()
         else:
             print(f"Invalid analysis type: {analysis_type}")
 
@@ -117,8 +115,51 @@ class StatBounceAnalyser(BounceAnalyser):
                 df_fp = df_fp[df_fp['gender'] == gender]
                 df_gym = df_gym[df_gym['gender'] == gender]
 
-        print(f'Gender: {gender}, Length of df_fp: {len(df_fp)}, Length of df_gym:{len(df_gym)}')
+        if gender is not None:
+            print(f'Gender: {gender}, Length of df_fp: {len(df_fp)}, Length of df_gym: {len(df_gym)}')
         return df_fp, df_gym
+
+    def participant_analysis(self):
+        current_dir = os.path.dirname(os.path.abspath('__file__'))
+        participants_data = os.path.abspath(os.path.join(current_dir, '.', 'files/sens/participants.xlsx'))
+        participants_data = pd.read_excel(participants_data)
+
+        # Filter data for males and females
+        male_data = participants_data[participants_data['gender'] == 'm']
+        female_data = participants_data[participants_data['gender'] == 'f']
+        overall_data = participants_data
+
+        metrics = ['age', 'bodyweight', 'height', 'hip_h', 'femur_l', 'tibia_l', 'absolute_rm', 'rel_rm']
+        results = []
+
+        for metric in metrics:
+            # Calculate means and standard deviations
+            male_mean = male_data[metric].mean()
+            male_std = male_data[metric].std()
+            female_mean = female_data[metric].mean()
+            female_std = female_data[metric].std()
+
+            # Perform t-test
+            t_stat, p_val = ttest_ind(male_data[metric].dropna(), female_data[metric].dropna())
+
+            # Determine significance
+            significant = "*" if p_val < 0.05 else ""
+
+            # Append results
+            results.append({
+                'Metric': metric,
+                'Male Mean (SD)': f"{male_mean:.1f} ± {male_std:.1f}",
+                'Female Mean (SD)': f"{female_mean:.1f} ± {female_std:.1f}",
+                'Overall Mean (SD)': f"{overall_data[metric].mean():.1f} ± {overall_data[metric].std():.1f}",
+                't-statistic': t_stat,
+                'p-value': p_val,
+                'Significance': significant
+            })
+
+        # Convert results to DataFrame for better presentation
+        results_df = pd.DataFrame(results)
+        print(results_df)
+
 
     def summary_statistics_by_type(self, df_fp, bounce_type):
         filtered_df = df_fp[df_fp['file_name'].str.contains(bounce_type)]
