@@ -115,8 +115,6 @@ class StatBounceAnalyser(BounceAnalyser):
                 df_fp = df_fp[df_fp['gender'] == gender]
                 df_gym = df_gym[df_gym['gender'] == gender]
 
-        if gender is not None:
-            print(f'Gender: {gender}, Length of df_fp: {len(df_fp)}, Length of df_gym: {len(df_gym)}')
         return df_fp, df_gym
 
     def participant_analysis(self):
