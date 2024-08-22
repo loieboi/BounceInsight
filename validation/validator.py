@@ -218,7 +218,7 @@ class Validator:
             ('t_con_fp', 't_con_gym', 't_con'),
             ('t_total_fp', 't_total_gym', 't_total'),
             ('F_turning_fp', 'F_turning_gym', 'F_turning'),
-            ('F_con_fp', 'F_con_gym', 'F_con')
+            ('peak_F_con_fp', 'peak_F_con_gym', 'peak_F_con')
         ]
         for col1, col2, label in comparisons:
             valid_data = merged_df[[col1, col2]].dropna()
