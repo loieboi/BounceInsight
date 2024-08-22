@@ -33,7 +33,7 @@ class DataPlotter(BounceAnalyser):
                 t_total = self.calculate_t_total(p_o_i, bounce_file_id)
                 turning_force = self.calculate_f_turning(p_o_i, bounce_file_id,
                                                          bounce_files[bounce_file_id]['combined_force'])
-                con_force = self.find_f_con(p_o_i, bounce_file_id, bounce_files[bounce_file_id]['combined_force'])
+                peak_f_con_force = self.find_peak_f_con(p_o_i, bounce_file_id, bounce_files[bounce_file_id]['combined_force'])
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
                 dip_color = '\033[92m' if has_dip else '\033[91m'
                 print(f"{dip_color}Dip detected: {has_dip}\033[0m")
@@ -42,9 +42,9 @@ class DataPlotter(BounceAnalyser):
                 t_con = None
                 t_total = None
                 turning_force = None
-                con_force = None
+                peak_f_con_force = None
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
-            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, con_force, plot=True,
+            self.plot_poi(bounce_files, bounce_file_id, p_o_i, baseline, t_ecc, t_con, t_total, peak_f_con_force, plot=True,
                           verbose=verbose)
         print(self.metadata)
