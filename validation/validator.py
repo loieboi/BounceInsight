@@ -31,7 +31,7 @@ class Validator:
             't_con': 't_con',
             't_total': 't_total',
             'F_turning': 'F_turning',
-            'F_con': 'F_con'
+            'peak_F_con': 'peak_F_con'
         }
 
         validation_results = []
@@ -50,8 +50,8 @@ class Validator:
                 't_total_comparison': None,
                 'F_turning_diff': None,
                 'F_turning_comparison': None,
-                'F_con_diff': None,
-                'F_con_comparison': None
+                'peak_F_con_diff': None,
+                'peak_F_con_comparison': None
             }
 
             for col_fp, col_gym in columns_to_compare.items():
@@ -128,9 +128,15 @@ class Validator:
         merged_df = pd.merge(df_fp, df_gym, on=['file_name', 'participant_id'], suffixes=('_fp', '_gym'))
 
         # Comparisons for time measurements
+        ecc_comparisons = [
+            ('t_ecc_fp', 't_ecc_gym', 't_ecc')
+        ]
+
+        con_comparisons = [
+            ('t_con_fp', 't_con_gym', 't_con')
+        ]
+
         time_comparisons = [
-            ('t_ecc_fp', 't_ecc_gym', 't_ecc'),
-            ('t_con_fp', 't_con_gym', 't_con'),
             ('t_total_fp', 't_total_gym', 't_total')
         ]
 
@@ -140,24 +146,26 @@ class Validator:
 
         ]
 
-        force_con_comparisons = [
-            ('F_con_fp', 'F_con_gym', 'F_con')
+        peak_force_con_comparisons = [
+            ('peak_F_con_fp', 'peak_F_con_gym', 'peak_F_con')
         ]
 
         # Create Bland-Altman plot for time measurements
-        self._bland_altman_plot(merged_df, time_comparisons, "Bland-Altman Plot for Time Measurements")
+        self._bland_altman_plot(merged_df, ecc_comparisons, "Bland-Altman Plot for Eccentric Time Measurements", color='green')
+        self._bland_altman_plot(merged_df, con_comparisons, "Bland-Altman Plot for Concentric Time Measurements", color='blue')
+        self._bland_altman_plot(merged_df, time_comparisons, "Bland-Altman Plot for Total Time Measurements", color='red')
 
         # Create Bland-Altman plot for force measurements
-        self._bland_altman_plot(merged_df, force_comparisons, "Bland-Altman Plot for Force Measurements")
+        self._bland_altman_plot(merged_df, force_comparisons, "Bland-Altman Plot for Turning Force Measurements", color='green')
 
         # Create Bland-Altman plot for Concentric force measurements
-        self._bland_altman_plot(merged_df, force_con_comparisons, "Bland-Altman Plot for Force Measurements")
+        self._bland_altman_plot(merged_df, peak_force_con_comparisons, "Bland-Altman Plot for Peak Concentric Force Measurements", color='blue')
 
-    def _bland_altman_plot(self, df, comparisons, title):
+    def _bland_altman_plot(self, df, comparisons, title, color='blue'):
         plt.figure(figsize=(12, 8))
 
         # Define different colors for each comparison
-        colors = ['blue', 'green', 'red', 'purple', 'orange']
+        colors = color
 
         overall_diffs = []
 
