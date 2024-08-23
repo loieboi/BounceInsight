@@ -213,6 +213,9 @@ class Validator:
             else:
                 print("The data is not good (less than 95% points within limits of agreement).")
 
+            print(f'Mean {mean_diff}, STD {std_diff}')
+            print(f'Lower limit: {lower_limit}, Upper limit: {upper_limit}, Span: {upper_limit - lower_limit}')
+
         plt.title(title)
         plt.xlabel('Mean of Two Measurements')
         plt.ylabel('Difference between Two Measurements')
