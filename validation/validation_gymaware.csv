@@ -1,4 +1,4 @@
-file_name,participant_id,t_ecc,t_con,t_total,F_turning,peak_F_con,mean_F_con,tpF,tpP,tpV,V_mean_ecc,P_peak_ecc,V_peak_ecc,P_mean_con,V_mean_con,P_peak_con,V_peak_con,dip_m,lD_m,hor_m
+file_name,participant_id,t_ecc,t_con,t_total,F_turning,peak_F_con,mean_F_con,tpF,tpP,tpV,mVe,pPe,pVe,mPc,mVc,pPc,pVc,dip_m,lD_m,hor_m
 03_bounce70b1,03,1,1.16,2.2,3409.15,3402.39,1983.77,0,0.997,1.008,0.71,2280.85,0.99,1213.98,0.61,2304.72,0.99,0.706,0.713,0.008
 03_bounce70b2,03,1.03,0.98,2.05,3219.43,3478.93,2000.57,0,0.826,0.847,0.67,1944.05,0.86,1543.23,0.75,4061.05,1.4,0.686,0.742,0.013
 03_bounce70b3,03,1.03,0.97,2.04,3141.55,3131.67,1989.72,0,0.81,0.842,0.65,1789.28,0.82,1477.66,0.73,3450.77,1.32,0.669,0.712,0.012
