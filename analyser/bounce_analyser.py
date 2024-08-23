@@ -64,19 +64,25 @@ class BounceAnalyser:
                 f_turning = self.calculate_f_turning(p_o_i, bounce_file_id,
                                                      bounce_files[bounce_file_id]['combined_force'])
                 peak_f_con = self.find_peak_f_con(p_o_i, bounce_file_id,
-                                        bounce_files[bounce_file_id]['combined_force'])
+                                                  bounce_files[bounce_file_id]['combined_force'])
                 mean_f_con = self.calculate_mean_f_con(p_o_i, bounce_file_id,
                                                        bounce_files[bounce_file_id]['combined_force'])
                 has_dip = self.find_dip_bounce(p_o_i, bounce_file_id)
-                f_turning_rel, peak_f_con_rel = self.calculate_relative_force(f_turning, peak_f_con,
-                                                                         self.metadata['bodyweight'] * 9.81)
-                f_turning_norm, peak_f_con_norm = self.calculate_relative_force(f_turning, peak_f_con,
-                                                                                   (self.metadata['bodyweight'] +
-                                                                                    self.metadata['load']) * 9.81)
+                f_turning_rel, peak_f_con_rel, mean_f_con_rel = self.calculate_relative_force(f_turning, peak_f_con,
+                                                                                              mean_f_con,
+                                                                                              self.metadata[
+                                                                                                  'bodyweight'] * 9.81)
+                f_turning_norm, peak_f_con_norm, mean_f_con_norm = self.calculate_relative_force(f_turning, peak_f_con,
+                                                                                                 mean_f_con,
+                                                                                                 (self.metadata[
+                                                                                                      'bodyweight'] +
+                                                                                                  self.metadata[
+                                                                                                      'load']) * 9.81)
 
                 if verbose:
                     print(
-                        f"File: {bounce_file_id}, t_ecc: {t_ecc:.3f} seconds, t_con: {t_con:.3f} seconds, t_total: {t_total:.3f} seconds")
+                        f"File: {bounce_file_id}, t_ecc: {t_ecc:.3f} seconds, t_con: {t_con:.3f} seconds, t_total: "
+                        f"{t_total:.3f} seconds")
                     print(f'Turning force: {f_turning:.2f} N')
                     dip_color = '\033[92m' if has_dip else '\033[91m'
                     print(f"{dip_color}Dip detected: {has_dip}\033[0m")
@@ -90,8 +96,10 @@ class BounceAnalyser:
                 mean_f_con = None
                 f_turning_rel = None
                 peak_f_con_rel = None
+                mean_f_con_rel = None
                 f_turning_norm = None
                 peak_f_con_norm = None
+                mean_f_con_norm = None
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
             # --- Plot Points of Interest in the correct graph (index is zeroed, so not applicable to raw files,
@@ -107,8 +115,8 @@ class BounceAnalyser:
 
             # --- Update CSV File with validation data for validator.py file ---
             self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, f_turning, peak_f_con,
-                                       mean_f_con, has_dip, f_turning_rel, peak_f_con_rel, f_turning_norm,
-                                       peak_f_con_norm, verbose=verbose)
+                                       mean_f_con, has_dip, f_turning_rel, peak_f_con_rel, mean_f_con_norm,
+                                       f_turning_norm, peak_f_con_norm, mean_f_con_norm, verbose=verbose)
 
             # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
@@ -426,7 +434,8 @@ class BounceAnalyser:
         return mean_f_con
 
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, f_turning, peak_f_con, mean_f_con,
-                              has_dip, f_turning_rel, peak_f_con_rel, f_turning_norm, peak_f_con_norm, verbose=False):
+                              has_dip, f_turning_rel, peak_f_con_rel, mean_f_con_rel, f_turning_norm, peak_f_con_norm,
+                              mean_f_con_norm, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
         analyser_folder_path = os.path.join(current_dir, 'files')
@@ -438,8 +447,8 @@ class BounceAnalyser:
         else:
             df = pd.DataFrame(
                 columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'F_turning', 'peak_F_con',
-                         'mean_F_con', 'has_dip', 'F_turning_rel', 'peak_F_con_rel', 'F_turning_norm',
-                         'peak_F_con_norm'])
+                         'mean_F_con', 'has_dip', 'F_turning_rel', 'peak_F_con_rel', 'mean_f_con_rel', 'F_turning_norm',
+                         'peak_F_con_norm', 'mean_F_con_norm'])
 
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
@@ -462,10 +471,14 @@ class BounceAnalyser:
             df['F_turning_rel'] = df['F_turning_rel'].astype(str)
         if 'peak_F_con_rel' in df.columns:
             df['peak_F_con_rel'] = df['peak_F_con_rel'].astype(str)
+        if 'mean_F_con_rel' in df.columns:
+            df['mean_F_con_rel'] = df['mean_F_con_rel'].astype(str)
         if 'F_turning_norm' in df.columns:
             df['F_turning_norm'] = df['F_turning_norm'].astype(str)
         if 'peak_F_con_norm' in df.columns:
             df['peak_F_con_norm'] = df['peak_F_con_norm'].astype(str)
+        if 'mean_F_con_norm' in df.columns:
+            df['mean_F_con_norm'] = df['mean_F_con_norm'].astype(str)
 
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
@@ -482,8 +495,10 @@ class BounceAnalyser:
                 'has_dip': str(has_dip),
                 'F_turning_rel': str(f_turning_rel),
                 'peak_F_con_rel': str(peak_f_con_rel),
+                'mean_F_con_rel': str(mean_f_con_rel),
                 'F_turning_norm': str(f_turning_norm),
-                'peak_F_con_norm': str(peak_f_con_norm)
+                'peak_F_con_norm': str(peak_f_con_norm),
+                'mean_F_con_norm': str(mean_f_con_norm)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
@@ -496,8 +511,10 @@ class BounceAnalyser:
             df.loc[mask, 'has_dip'] = str(has_dip)
             df.loc[mask, 'F_turning_rel'] = str(f_turning_rel)
             df.loc[mask, 'peak_F_con_rel'] = str(peak_f_con_rel)
+            df.loc[mask, 'mean_F_con_rel'] = str(mean_f_con_rel)
             df.loc[mask, 'F_turning_norm'] = str(f_turning_norm)
             df.loc[mask, 'peak_F_con_norm'] = str(peak_f_con_norm)
+            df.loc[mask, 'mean_F_con_norm'] = str(mean_f_con_norm)
 
         df.to_csv(validation_csv_path, index=False)
         df.to_csv(forceplate_data_csv, index=False)
@@ -605,8 +622,9 @@ class BounceAnalyser:
         else:
             pass
 
-    def calculate_relative_force(self, f_turning, peak_f_con, baseline_weight):
+    def calculate_relative_force(self, f_turning, peak_f_con, mean_f_con, baseline_weight):
         f_turning_relative = f_turning / baseline_weight if f_turning else None
         peak_f_con_relative = peak_f_con / baseline_weight if peak_f_con else None
+        mean_f_con_relative = mean_f_con / baseline_weight if mean_f_con else None
 
-        return f_turning_relative, peak_f_con_relative
+        return f_turning_relative, peak_f_con_relative, mean_f_con_relative
