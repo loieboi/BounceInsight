@@ -334,6 +334,7 @@ class StatBounceAnalyser(BounceAnalyser):
         except Exception as e:
             print(f"Error in performing ANOVA: {e}")
 
+        plt.figure(figsize=(12, 8))
         sns.boxplot(x='cue', y=metric, hue='condition', data=df_long)
         plt.title(f'Two-Way Split-Plot ANOVA results for {metric}')
         plt.show()
