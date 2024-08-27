@@ -620,7 +620,30 @@ class StatBounceAnalyser(BounceAnalyser):
         else:
             print("Assumptions not met for paired t-test. Using Wilcoxon signed-rank test instead.")
             result = stats.wilcoxon(df_grouped[group1], df_grouped[group2])
+            p_value = result.pvalue
             print(f"Wilcoxon Signed-Rank Test for {metric}: statistic = {result.statistic}, p-value = {result.pvalue}")
+
+        # Create boxplots for the two groups
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(data=df_grouped[[group1, group2]])
+
+        if p_value < 0.001:
+            significance = '***'
+        elif p_value < 0.01:
+            significance = '**'
+        elif p_value < 0.05:
+            significance = '*'
+        else:
+            significance = 'ns'  # not significant
+        x1, x2 = 0, 1  # x locations of the two boxes
+        y, h, col = df_grouped[[group1, group2]].max().max() + 0.1, 0.02, 'k'
+
+        plt.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c=col)
+        plt.text((x1 + x2) * 0.5, y + h, significance, ha='center', va='bottom', color=col)
+
+        plt.title(f'Boxplot for {metric}: {group1} vs {group2}')
+        plt.ylabel(metric)
+        plt.show()
 
     def check_data(self, df, metric, comparison_type):
         data = []
