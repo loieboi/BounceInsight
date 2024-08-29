@@ -315,12 +315,41 @@ class StatBounceAnalyser(BounceAnalyser):
 
         df_long = df_anova_pivot.stack(level=['condition', 'cue'], future_stack=True).reset_index()
         df_long.columns = ['participant_id', 'condition', 'cue', metric]
-
+        cue_annotation = 'ns'
+        condition_annotation = 'ns'
+        interaction_annotation = 'ns'
         try:
             anova_model = AnovaRM(df_long, depvar=metric, subject='participant_id', within=['cue', 'condition'],
                                   aggregate_func='mean')
             anova_results = anova_model.fit()
             print(anova_results)
+
+            if anova_results.anova_table['Pr > F']['cue'] < 0.001:
+                cue_annotation = '***'
+            elif anova_results.anova_table['Pr > F']['cue'] < 0.01:
+                cue_annotation = '**'
+            elif anova_results.anova_table['Pr > F']['cue'] < 0.05:
+                cue_annotation = '*'
+            else:
+                cue_annotation = 'ns'
+
+            if anova_results.anova_table['Pr > F']['condition'] < 0.001:
+                condition_annotation = '***'
+            elif anova_results.anova_table['Pr > F']['condition'] < 0.01:
+                condition_annotation = '**'
+            elif anova_results.anova_table['Pr > F']['condition'] < 0.05:
+                condition_annotation = '*'
+            else:
+                condition_annotation = 'ns'
+
+            if anova_results.anova_table['Pr > F']['cue:condition'] < 0.001:
+                interaction_annotation = '***'
+            elif anova_results.anova_table['Pr > F']['cue:condition'] < 0.01:
+                interaction_annotation = '**'
+            elif anova_results.anova_table['Pr > F']['cue:condition'] < 0.05:
+                interaction_annotation = '*'
+            else:
+                interaction_annotation = 'ns'
 
             # Check for significant effects to perform paired t-tests
             if anova_results.anova_table['Pr > F']['cue'] < 0.05:
@@ -333,10 +362,38 @@ class StatBounceAnalyser(BounceAnalyser):
 
         except Exception as e:
             print(f"Error in performing ANOVA: {e}")
-
         plt.figure(figsize=(12, 8))
         sns.boxplot(x='cue', y=metric, hue='condition', data=df_long)
         plt.title(f'Two-Way Split-Plot ANOVA results for {metric}')
+
+        # Add annotation lines for Cue
+        if cue_annotation:
+            x1, x2 = 0, 1  # positions for the two cues (fast and slow)
+            y, h, col = df_long[
+                            metric].max() + 0.5, 0.1, 'k'  # y position and height for the line, color is black ('k')
+
+            plt.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c=col)
+            plt.text((x1 + x2) * 0.5, y + h, cue_annotation, ha='center', va='bottom', color=col)
+
+        # Add annotation lines for Condition within each Cue
+        for idx, cue in enumerate(df_long['cue'].unique()):
+            subset = df_long[df_long['cue'] == cue]
+            y = subset[metric].max() + 0.3  # Adjust the y position for annotation
+            x1, x2 = idx - 0.2, idx + 0.2  # positions for 'bounce' and 'nobounce' within the same cue
+
+            plt.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c=col)
+            plt.text((x1 + x2) * 0.5, y + h, condition_annotation, ha='center', va='bottom', color=col)
+
+        # Add interaction lines to connect the means or medians
+        medians = df_long.groupby(['cue', 'condition'])[metric].median().reset_index()
+
+        for cue in df_long['cue'].unique():
+            bounce_val = medians[(medians['cue'] == cue) & (medians['condition'] == 'bounce')][metric].values[0]
+            nobounce_val = medians[(medians['cue'] == cue) & (medians['condition'] == 'nobounce')][metric].values[0]
+
+            x1, x2 = 0 if cue == 'slow' else 1, 0 if cue == 'slow' else 1
+            plt.plot([x1 - 0.2, x1 + 0.2], [bounce_val, nobounce_val], marker='o', color='red', linestyle='dashed')
+
         plt.show()
 
     def post_hoc_tests(self, df, factor, metric):
