@@ -31,8 +31,8 @@ class Validator:
             't_con': 't_con',
             't_total': 't_total',
             'F_turning': 'F_turning',
-            'peak_F_con': 'peak_F_con',
-            'mean_F_con': 'mean_F_con'
+            'pFc': 'pFc',
+            'mFc': 'mFc'
         }
 
         validation_results = []
@@ -51,10 +51,10 @@ class Validator:
                 't_total_comparison': None,
                 'F_turning_diff': None,
                 'F_turning_comparison': None,
-                'peak_F_con_diff': None,
-                'peak_F_con_comparison': None,
-                'mean_F_con_diff': None,
-                'mean_F_con_comparison': None,
+                'pFc_diff': None,
+                'pFc_comparison': None,
+                'mFc_diff': None,
+                'mFc_comparison': None,
             }
 
             for col_fp, col_gym in columns_to_compare.items():
@@ -113,7 +113,7 @@ class Validator:
                                 cell.fill = red_fill
                     except TypeError:
                         pass
-                elif cell.column_letter in ['I', 'K', 'M']:  # F_turning_diff, peak_F_con_diff, mean_F_con_diff
+                elif cell.column_letter in ['I', 'K', 'M']:  # F_turning_diff, pFc_diff, mFc_diff
                     try:
                         if cell.value is not None:
                             if cell.value < 750:
@@ -150,10 +150,10 @@ class Validator:
         ]
 
         peak_force_con_comparisons = [
-            ('peak_F_con_fp', 'peak_F_con_gym', 'peak_F_con')
+            ('pFc_fp', 'pFc_gym', 'pFc')
         ]
         mean_force_con_comparisons = [
-            ('mean_F_con_fp', 'mean_F_con_gym', 'mean_F_con')
+            ('mFc_fp', 'mFc_gym', 'mFc')
         ]
 
         # Create Bland-Altman plot for time measurements
@@ -230,8 +230,8 @@ class Validator:
             ('t_con_fp', 't_con_gym', 't_con'),
             ('t_total_fp', 't_total_gym', 't_total'),
             ('F_turning_fp', 'F_turning_gym', 'F_turning'),
-            ('peak_F_con_fp', 'peak_F_con_gym', 'peak_F_con'),
-            ('mean_F_con_fp', 'mean_F_con_gym', 'mean_F_con')
+            ('pFc_fp', 'pFc_gym', 'pFc'),
+            ('mFc_fp', 'mFc_gym', 'mFc')
         ]
         for col1, col2, label in comparisons:
             valid_data = merged_df[[col1, col2]].dropna()

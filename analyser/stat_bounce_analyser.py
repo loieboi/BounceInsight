@@ -331,7 +331,7 @@ class StatBounceAnalyser(BounceAnalyser):
             elif anova_results.anova_table['Pr > F']['cue'] < 0.05:
                 cue_annotation = '*'
             else:
-                cue_annotation = 'ns'
+                cue_annotation = 'n.s.'
 
             if anova_results.anova_table['Pr > F']['condition'] < 0.001:
                 condition_annotation = '***'
@@ -340,7 +340,7 @@ class StatBounceAnalyser(BounceAnalyser):
             elif anova_results.anova_table['Pr > F']['condition'] < 0.05:
                 condition_annotation = '*'
             else:
-                condition_annotation = 'ns'
+                condition_annotation = 'n.s.'
 
             if anova_results.anova_table['Pr > F']['cue:condition'] < 0.001:
                 interaction_annotation = '***'
@@ -349,7 +349,7 @@ class StatBounceAnalyser(BounceAnalyser):
             elif anova_results.anova_table['Pr > F']['cue:condition'] < 0.05:
                 interaction_annotation = '*'
             else:
-                interaction_annotation = 'ns'
+                interaction_annotation = 'n.s.'
 
             # Check for significant effects to perform paired t-tests
             if anova_results.anova_table['Pr > F']['cue'] < 0.05:
@@ -692,7 +692,7 @@ class StatBounceAnalyser(BounceAnalyser):
         elif p_value < 0.05:
             significance = '*'
         else:
-            significance = 'ns'  # not significant
+            significance = 'n.s.'
         x1, x2 = 0, 1  # x locations of the two boxes
         y, h, col = df_grouped[[group1, group2]].max().max() + 0.1, 0.02, 'k'
 
