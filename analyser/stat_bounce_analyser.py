@@ -394,6 +394,7 @@ class StatBounceAnalyser(BounceAnalyser):
             x1, x2 = 0 if cue == 'slow' else 1, 0 if cue == 'slow' else 1
             plt.plot([x1 - 0.2, x1 + 0.2], [bounce_val, nobounce_val], marker='o', color='red', linestyle='dashed')
 
+        self.save_plot(plt, 'anova', metric, comparison_type=None)
         plt.show()
 
     def post_hoc_tests(self, df, factor, metric):
@@ -544,6 +545,7 @@ class StatBounceAnalyser(BounceAnalyser):
         plt.xlabel('Group')
         plt.xticks(rotation=0)
         ax.legend(title='Has Dip', labels=['False', 'True'], loc='upper right')
+        self.save_plot(plt, 'chi2', metric=None, comparison_type=comparison_type)
         plt.show()
 
     def paired_ttest_with_averages(self, df, metric, comparison_type):
@@ -701,6 +703,7 @@ class StatBounceAnalyser(BounceAnalyser):
 
         plt.title(f'Boxplot for {metric}: {group1} vs {group2}')
         plt.ylabel(metric)
+        self.save_plot(plt, 'ttest', metric, comparison_type=comparison_type)
         plt.show()
 
     def check_data(self, df, metric, comparison_type):
@@ -846,3 +849,16 @@ class StatBounceAnalyser(BounceAnalyser):
         print(outliers_group1)
         print(f"Outliers in {group2}:")
         print(outliers_group2)
+
+    def save_plot(self, plot, test_name, metric, comparison_type):
+        # Ensure the plots directory exists
+        plots_dir = 'files/plots'
+        os.makedirs(plots_dir, exist_ok=True)
+
+        # Construct the file name
+        file_name = f"{test_name}_{metric}_{comparison_type}.png"
+        file_path = os.path.join(plots_dir, file_name)
+
+        # Save the plot
+        plot.savefig(file_path)
+        #print(f"Plot saved to {file_path} \n")
