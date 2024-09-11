@@ -174,10 +174,10 @@ class BounceAnalyser:
             print(f"Participant {participant_id} not found in the load table.")
             return
 
-        bodyweight = participant_row['bodyweight'].values[0]
-        bodyweight_2 = participant_row['bodyweight_2'].values[0]
-        load_70 = participant_row['bounce70_load'].values[0]
-        load_80 = participant_row['bounce80_load'].values[0]
+        bodyweight = float(participant_row['bodyweight'].values[0])
+        bodyweight_2 = float(participant_row['bodyweight_2'].values[0])
+        load_70 = float(participant_row['bounce70_load'].values[0])
+        load_80 = float(participant_row['bounce80_load'].values[0])
         gender = participant_row['gender'].values[0]
 
         # This logic is used to load the correct load and bodyweight
@@ -281,8 +281,7 @@ class BounceAnalyser:
                 columns=['file_name', 'participant_id', 'start', 'end', 'pos_peaks', 'neg_peaks', 'baseline_crossings',
                          'turning_point', 'dip'])
 
-        # Convert 'file_name' and 'participant_id' columns to string -- otherwise 04 --> 4 and for some reason I
-        # stuck to the "0"
+        # Convert 'file_name' and 'participant_id' columns to string
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
 
@@ -298,7 +297,7 @@ class BounceAnalyser:
         if 'dip' in df.columns:
             df['dip'] = df['dip'].astype(str)
 
-        # Check if a row with the same file_name and participant_id already exists --> no duplicates
+        # Check if a row with the same file_name and participant_id already exists
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
         if df[mask].empty:
@@ -306,10 +305,10 @@ class BounceAnalyser:
             new_row = pd.DataFrame([{
                 'file_name': file_name,
                 'participant_id': participant_id,
-                'pos_peaks': str(pos_peaks),
-                'neg_peaks': str(neg_peaks),
-                'baseline_crossings': str(baseline_crossings),
-                'turning_point': str(turning_points[0]) if turning_points else '',
+                'pos_peaks': [float(peak) for peak in pos_peaks],
+                'neg_peaks': [float(peak) for peak in neg_peaks],
+                'baseline_crossings': [float(crossing) for crossing in baseline_crossings],
+                'turning_point': str(float(turning_points[0])) if turning_points else '',
                 'dip': str(dip)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
@@ -318,14 +317,13 @@ class BounceAnalyser:
             start_frame = df.loc[mask, 'start'].values[0]
 
             # Add the start frame value to each point of interest
-            pos_peaks = [peak + start_frame for peak in pos_peaks]
-            neg_peaks = [peak + start_frame for peak in neg_peaks]
-            baseline_crossings = [crossing + start_frame for crossing in baseline_crossings]
-            turning_point = turning_points[0] + start_frame if turning_points else ''
+            pos_peaks = [float(peak + start_frame) for peak in pos_peaks]
+            neg_peaks = [float(peak + start_frame) for peak in neg_peaks]
+            baseline_crossings = [float(crossing + start_frame) for crossing in baseline_crossings]
+            turning_point = float(turning_points[0] + start_frame) if turning_points else ''
             dip = str(dip)
 
-            # Update the pos_peaks, neg_peaks, baseline_crossings
-            # and turning_point columns for that row with the new data
+            # Update the pos_peaks, neg_peaks, baseline_crossings, and turning_point columns for that row with the new data
             df.loc[mask, 'pos_peaks'] = str(pos_peaks)
             df.loc[mask, 'neg_peaks'] = str(neg_peaks)
             df.loc[mask, 'baseline_crossings'] = str(baseline_crossings)
