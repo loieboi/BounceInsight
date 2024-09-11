@@ -78,6 +78,7 @@ class BounceAnalyser:
                                                                                                       'bodyweight'] +
                                                                                                   self.metadata[
                                                                                                       'load']) * 9.81)
+                fc_max = self.find_fc_max(p_o_i, bounce_file_id, bounce_files[bounce_file_id]['combined_force'])
 
                 if verbose:
                     print(
@@ -100,6 +101,7 @@ class BounceAnalyser:
                 f_turning_norm = None
                 pfc_norm = None
                 mfc_norm = None
+                fc_max = None
                 print(f"No turning point detected for file {bounce_file_id}. Skipping...")
 
             # --- Plot Points of Interest in the correct graph (index is zeroed, so not applicable to raw files,
@@ -116,7 +118,7 @@ class BounceAnalyser:
             # --- Update CSV File with validation data for validator.py file ---
             self.update_csv_validation(file_name, participant_id, t_ecc, t_con, t_total, f_turning, pfc,
                                        mfc, has_dip, f_turning_rel, pfc_rel, mfc_norm,
-                                       f_turning_norm, pfc_norm, mfc_norm, verbose=verbose)
+                                       f_turning_norm, pfc_norm, mfc_norm, fc_max, verbose=verbose)
 
             # --- See how many files are in the respective folder, goal is to be equal ---
             file_name = file_name.split('_', 1)[-1]
@@ -436,7 +438,7 @@ class BounceAnalyser:
 
     def update_csv_validation(self, file_name, participant_id, t_ecc, t_con, t_total, f_turning, pfc, mfc,
                               has_dip, f_turning_rel, pfc_rel, mfc_rel, f_turning_norm, pfc_norm,
-                              mfc_norm, verbose=False):
+                              mfc_norm, fc_max, verbose=False):
         current_dir = os.path.dirname(os.path.abspath('__file__'))
         validation_folder_path = os.path.join(current_dir, 'validation')
         analyser_folder_path = os.path.join(current_dir, 'files')
@@ -449,7 +451,7 @@ class BounceAnalyser:
             df = pd.DataFrame(
                 columns=['file_name', 'participant_id', 't_ecc', 't_con', 't_total', 'F_turning', 'pFc',
                          'mFc', 'has_dip', 'F_turning_rel', 'pFc_rel', 'mFc_rel', 'F_turning_norm',
-                         'pFc_norm', 'mFc_norm'])
+                         'pFc_norm', 'mFc_norm', 'Fc_max'])
 
         df['file_name'] = df['file_name'].astype(str)
         df['participant_id'] = df['participant_id'].astype(str)
@@ -480,6 +482,8 @@ class BounceAnalyser:
             df['pFc_norm'] = df['pFc_norm'].astype(str)
         if 'mFc_norm' in df.columns:
             df['mFc_norm'] = df['mFc_norm'].astype(str)
+        if 'Fc_max' in df.columns:
+            df['Fc_max'] = df['Fc_max'].astype(str)
 
         mask = (df['file_name'] == file_name) & (df['participant_id'] == participant_id)
 
@@ -499,7 +503,8 @@ class BounceAnalyser:
                 'mFc_rel': str(mfc_rel),
                 'F_turning_norm': str(f_turning_norm),
                 'pFc_norm': str(pfc_norm),
-                'mFc_norm': str(mfc_norm)
+                'mFc_norm': str(mfc_norm),
+                'Fc_max': str(fc_max)
             }])
             df = pd.concat([df, new_row], ignore_index=True)
         else:
@@ -516,6 +521,7 @@ class BounceAnalyser:
             df.loc[mask, 'F_turning_norm'] = str(f_turning_norm)
             df.loc[mask, 'pFc_norm'] = str(pfc_norm)
             df.loc[mask, 'mFc_norm'] = str(mfc_norm)
+            df.loc[mask, 'Fc_max'] = str(fc_max)
 
         df.to_csv(validation_csv_path, index=False)
         df.to_csv(forceplate_data_csv, index=False)
@@ -629,3 +635,19 @@ class BounceAnalyser:
         mfc_relative = mfc / baseline_weight if mfc else None
 
         return f_turning_relative, pfc_relative, mfc_relative
+
+    def find_fc_max(self, p_o_i, bounce_file_id, combined_force):
+        poi = p_o_i[bounce_file_id]
+        turning_point = poi['turning_points'][0] if poi['turning_points'] else None
+        last_baseline_crossing = poi['baseline_crossings'][-1]
+
+        if turning_point is not None and last_baseline_crossing is not None:
+            # Extract the concentric phase segment
+            con_force_segment = combined_force[turning_point:last_baseline_crossing]
+            # Find the maximum absolute force in the concentric phase
+            fc_max = con_force_segment.abs().max()
+        else:
+            fc_max = None
+
+        return fc_max
+
