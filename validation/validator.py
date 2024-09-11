@@ -176,7 +176,7 @@ class Validator:
         self._bland_altman_plot(merged_df, mean_force_con_comparisons,
                                 "Bland-Altman Plot for Mean Concentric Force Measurements", color='blue')
         self._bland_altman_plot(merged_df, max_con_force_comparisons,
-                                "Bland-Altman Plot for Mean Concentric Force Measurements", color='blue')
+                                "Bland-Altman Plot for Max Concentric Force Measurements", color='blue')
 
 
     def _bland_altman_plot(self, df, comparisons, title, color='blue'):
