@@ -1,0 +1,2 @@
+09_bounce80b3   --> Removed from Validation, F_turning GymAware Calculation was faulty/buggy
+38_slownb2      --> POI's manually edited in code, since analyser's turning detection failed

@@ -162,7 +162,6 @@ file_name,participant_id,t_ecc_diff,t_ecc_comparison,t_con_diff,t_con_comparison
 09_bounce70nb3,09,0.21,fp_higher,0.23,gym_higher,,,225.44,fp_higher,,,269.06,fp_higher
 09_bounce80b1,09,0.12,fp_higher,0.17,gym_higher,,,,,291.72,gym_higher,233.87,fp_higher
 09_bounce80b2,09,0.13,fp_higher,0.2,gym_higher,,,,,226.83,gym_higher,179.72,fp_higher
-09_bounce80b3,09,,,0.23,gym_higher,0.22,gym_higher,2309.45,gym_higher,1153.24,gym_higher,157.36,fp_higher
 09_bounce80nb1,09,0.19,fp_higher,0.23,gym_higher,,,132.75,fp_higher,,,192.87,fp_higher
 09_bounce80nb2,09,0.26,fp_higher,0.19,gym_higher,,,183.16,fp_higher,,,196.62,fp_higher
 09_bounce80nb3,09,0.14,fp_higher,0.16,gym_higher,,,,,,,236.48,fp_higher

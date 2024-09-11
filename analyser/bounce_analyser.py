@@ -214,7 +214,10 @@ class BounceAnalyser:
             start = baseline_crossings[i]
             end = baseline_crossings[i + 1]
             # Find the two (for reason used later) the highest peaks between these two baseline crossings
-            pos_peaks, neg_peaks, turning_peaks = self.find_highest_peaks(combined, start, end, baseline)
+            if file_name == "38_slownb2":
+                pos_peaks, neg_peaks, turning_peaks = self.find_highest_peaks(combined, start, end, baseline, turning_point_prominence=25)
+            else:
+                pos_peaks, neg_peaks, turning_peaks = self.find_highest_peaks(combined, start, end, baseline)
             highest_pos_peaks.extend(pos_peaks)
             highest_neg_peaks.extend(neg_peaks)
             turning_pos_peaks.extend(turning_peaks)

@@ -99,6 +99,6 @@ def process_gymaware_data(name_to_id_file, input_file, output_file):
 if __name__ == "__main__":
     current_dir = os.path.dirname('__file__')
     name_to_id_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/name_to_id_map.csv'))
-    input_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/bounce_data_gymaware_all_v2.csv'))
+    input_file = os.path.abspath(os.path.join(current_dir, '..', 'files/sens/bounce_data_gymaware_all.csv'))
     output_file = os.path.abspath(os.path.join(current_dir, '..', 'files/gymaware_all.csv'))
     process_gymaware_data(name_to_id_file, input_file, output_file)
