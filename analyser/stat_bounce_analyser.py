@@ -315,9 +315,11 @@ class StatBounceAnalyser(BounceAnalyser):
 
         df_long = df_anova_pivot.stack(level=['condition', 'cue'], future_stack=True).reset_index()
         df_long.columns = ['participant_id', 'condition', 'cue', metric]
+
         cue_annotation = 'ns'
-        condition_annotation = 'ns'
-        interaction_annotation = 'ns'
+        condition_annotation_slow = 'ns'  # Separate annotation for slow cue
+        condition_annotation_fast = 'ns'  # Separate annotation for fast cue
+
         try:
             anova_model = AnovaRM(df_long, depvar=metric, subject='participant_id', within=['cue', 'condition'],
                                   aggregate_func='mean')
@@ -333,23 +335,37 @@ class StatBounceAnalyser(BounceAnalyser):
             else:
                 cue_annotation = 'n.s.'
 
-            if anova_results.anova_table['Pr > F']['condition'] < 0.001:
-                condition_annotation = '***'
-            elif anova_results.anova_table['Pr > F']['condition'] < 0.01:
-                condition_annotation = '**'
-            elif anova_results.anova_table['Pr > F']['condition'] < 0.05:
-                condition_annotation = '*'
-            else:
-                condition_annotation = 'n.s.'
-
-            if anova_results.anova_table['Pr > F']['cue:condition'] < 0.001:
-                interaction_annotation = '***'
-            elif anova_results.anova_table['Pr > F']['cue:condition'] < 0.01:
-                interaction_annotation = '**'
-            elif anova_results.anova_table['Pr > F']['cue:condition'] < 0.05:
-                interaction_annotation = '*'
-            else:
-                interaction_annotation = 'n.s.'
+            # Now, perform pairwise comparisons for conditions within each cue and update annotations
+            slow_bounce = df_long[(df_long['cue'] == 'slow') & (df_long['condition'] == 'bounce')][metric].dropna()
+            slow_no_bounce = df_long[(df_long['cue'] == 'slow') & (df_long['condition'] == 'nobounce')][
+                    metric].dropna()
+            fast_bounce = df_long[(df_long['cue'] == 'fast') & (df_long['condition'] == 'bounce')][metric].dropna()
+            fast_no_bounce = df_long[(df_long['cue'] == 'fast') & (df_long['condition'] == 'nobounce')][
+                    metric].dropna()
+            # For slow cue: Paired t-test
+            if not slow_bounce.empty and not slow_no_bounce.empty:
+                t_stat_slow, p_value_slow = stats.ttest_rel(slow_bounce, slow_no_bounce)
+                print(f"Paired t-test for slow cue: t={t_stat_slow:.3f}, p={p_value_slow:.4f}")
+                if p_value_slow < 0.001:
+                    condition_annotation_slow = '***'
+                elif p_value_slow < 0.01:
+                    condition_annotation_slow = '**'
+                elif p_value_slow < 0.05:
+                    condition_annotation_slow = '*'
+                else:
+                    condition_annotation_slow = 'n.s.'
+                # For fast cue: Paired t-test
+                if not fast_bounce.empty and not fast_no_bounce.empty:
+                    t_stat_fast, p_value_fast = stats.ttest_rel(fast_bounce, fast_no_bounce)
+                    print(f"Paired t-test for fast cue: t={t_stat_fast:.3f}, p={p_value_fast:.4f}")
+                    if p_value_fast < 0.001:
+                        condition_annotation_fast = '***'
+                    elif p_value_fast < 0.01:
+                        condition_annotation_fast = '**'
+                    elif p_value_fast < 0.05:
+                        condition_annotation_fast = '*'
+                    else:
+                        condition_annotation_fast = 'n.s.'
 
             # Check for significant effects to perform paired t-tests
             if anova_results.anova_table['Pr > F']['cue'] < 0.05:
@@ -370,29 +386,25 @@ class StatBounceAnalyser(BounceAnalyser):
         if cue_annotation:
             x1, x2 = 0, 1  # positions for the two cues (fast and slow)
             y, h, col = df_long[
-                            metric].max() + 0.5, 0.1, 'k'  # y position and height for the line, color is black ('k')
+                            metric].max() + 0.7, 0.1, 'k'  # y position and height for the line, color is black ('k')
 
             plt.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c=col)
             plt.text((x1 + x2) * 0.5, y + h, cue_annotation, ha='center', va='bottom', color=col)
 
-        # Add annotation lines for Condition within each Cue
         for idx, cue in enumerate(df_long['cue'].unique()):
             subset = df_long[df_long['cue'] == cue]
-            y = subset[metric].max() + 0.3  # Adjust the y position for annotation
+            y = subset[metric].max() + 0.2  # Adjust the y position for annotation
             x1, x2 = idx - 0.2, idx + 0.2  # positions for 'bounce' and 'nobounce' within the same cue
 
+            # Use the appropriate annotation for each cue
+            if cue == 'slow':
+                annotation = condition_annotation_slow
+            elif cue == 'fast':
+                annotation = condition_annotation_fast
+
             plt.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c=col)
-            plt.text((x1 + x2) * 0.5, y + h, condition_annotation, ha='center', va='bottom', color=col)
+            plt.text((x1 + x2) * 0.5, y + h, annotation, ha='center', va='bottom', color=col)
 
-        # Add interaction lines to connect the means or medians
-        medians = df_long.groupby(['cue', 'condition'])[metric].median().reset_index()
-
-        for cue in df_long['cue'].unique():
-            bounce_val = medians[(medians['cue'] == cue) & (medians['condition'] == 'bounce')][metric].values[0]
-            nobounce_val = medians[(medians['cue'] == cue) & (medians['condition'] == 'nobounce')][metric].values[0]
-
-            x1, x2 = 0 if cue == 'slow' else 1, 0 if cue == 'slow' else 1
-            plt.plot([x1 - 0.2, x1 + 0.2], [bounce_val, nobounce_val], marker='o', color='red', linestyle='dashed')
 
         self.save_plot(plt, 'anova', metric, comparison_type=None)
         plt.show()
