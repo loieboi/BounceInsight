@@ -309,7 +309,6 @@ class StatBounceAnalyser(BounceAnalyser):
             return
 
         df_anova = pd.DataFrame(data)
-
         df_anova_pivot = df_anova.pivot_table(index='participant_id', columns=['condition', 'cue'], values=metric,
                                               aggfunc='mean')
 
@@ -335,7 +334,6 @@ class StatBounceAnalyser(BounceAnalyser):
             else:
                 cue_annotation = 'n.s.'
 
-            # Now, perform pairwise comparisons for conditions within each cue and update annotations
             slow_bounce = df_long[(df_long['cue'] == 'slow') & (df_long['condition'] == 'bounce')][metric].dropna()
             slow_no_bounce = df_long[(df_long['cue'] == 'slow') & (df_long['condition'] == 'nobounce')][
                     metric].dropna()
@@ -345,7 +343,9 @@ class StatBounceAnalyser(BounceAnalyser):
             # For slow cue: Paired t-test
             if not slow_bounce.empty and not slow_no_bounce.empty:
                 t_stat_slow, p_value_slow = stats.ttest_rel(slow_bounce, slow_no_bounce)
-                print(f"Paired t-test for slow cue: t={t_stat_slow:.3f}, p={p_value_slow:.4f}")
+                pooled_sd = np.sqrt((slow_bounce.std() ** 2 + slow_no_bounce.std() ** 2) / 2)
+                cohen_d_slow = (slow_bounce.mean() - slow_no_bounce.mean()) / pooled_sd
+                print(f"Paired t-test for slow cue: t={t_stat_slow:.3f}, p={p_value_slow:.4f}, Cohen's d={cohen_d_slow:.3f}")
                 if p_value_slow < 0.001:
                     condition_annotation_slow = '***'
                 elif p_value_slow < 0.01:
@@ -357,7 +357,10 @@ class StatBounceAnalyser(BounceAnalyser):
                 # For fast cue: Paired t-test
                 if not fast_bounce.empty and not fast_no_bounce.empty:
                     t_stat_fast, p_value_fast = stats.ttest_rel(fast_bounce, fast_no_bounce)
-                    print(f"Paired t-test for fast cue: t={t_stat_fast:.3f}, p={p_value_fast:.4f}")
+                    pooled_sd = np.sqrt((fast_bounce.std() ** 2 + fast_no_bounce.std() ** 2) / 2)
+                    cohen_d_fast = (fast_bounce.mean() - fast_no_bounce.mean()) / pooled_sd
+                    print(
+                        f"Paired t-test for fast cue: t={t_stat_fast:.3f}, p={p_value_fast:.4f}, Cohen's d={cohen_d_fast:.3f}")
                     if p_value_fast < 0.001:
                         condition_annotation_fast = '***'
                     elif p_value_fast < 0.01:
