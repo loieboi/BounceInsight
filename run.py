@@ -1,3 +1,6 @@
+# THIS SCRIPT IS RETIRED AND NOT FULLY WORKING
+# WAS NOT TOP PRIORITY, HENCE RETIREMENT
+
 import sys
 import os
 import tkinter as tk
