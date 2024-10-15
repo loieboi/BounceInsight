@@ -76,6 +76,13 @@ class Validator:
                         if diff > tolerance * max(fp_value, gym_value):
                             result[f'{col_fp}_diff'] = round(diff, 2)
                             result[f'{col_fp}_comparison'] = 'fp_higher' if fp_value > gym_value else 'gym_higher'
+                    elif f'Fc_max' in row and f'pFc_gym' in row:
+                        fp_value = row[f'Fc_max']
+                        gym_value = row[f'pFc_gym']
+                        diff = abs(fp_value - gym_value)
+                        if diff > tolerance * max(fp_value, gym_value):
+                            result[f'{col_fp}_diff'] = round(diff, 2)
+                            result[f'{col_fp}_comparison'] = 'fp_higher' if fp_value > gym_value else 'gym_higher'
                 except KeyError as e:
                     print(f"KeyError: {e}")
 

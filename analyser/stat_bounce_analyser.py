@@ -688,8 +688,8 @@ class StatBounceAnalyser(BounceAnalyser):
         if homogeneity_passed and normality_passed:
             # Perform paired t-test on the means
             t_stat, p_value = stats.ttest_rel(df_grouped[group1], df_grouped[group2])
-            cohen_d = (df_grouped[group1].mean() - df_grouped[group2].mean()) / np.std(
-                df_grouped[group1] - df_grouped[group2])
+            pooled_sd = np.sqrt((df_grouped[group1].std() ** 2 + df_grouped[group2].std() ** 2) / 2)
+            cohen_d = (df_grouped[group1].mean() - df_grouped[group2].mean()) / pooled_sd
             print(f"Paired t-test results for {metric} comparing {group1} and {group2}:")
             print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}, Cohen's d: {cohen_d:.4f}")
         else:
